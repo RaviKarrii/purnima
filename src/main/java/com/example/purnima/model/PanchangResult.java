@@ -104,8 +104,8 @@ public class PanchangResult {
         sb.append("   Name: ").append(tithi.getTithiName()).append(" (").append(tithi.getSanskritName()).append(")\n");
         sb.append("   Number: ").append(tithi.getTithiNumber()).append("\n");
         sb.append("   Paksha: ").append(tithi.isShuklaPaksha() ? "Shukla (Waxing)" : "Krishna (Waning)").append("\n");
-        sb.append("   Start: ").append(formatTime(tithi.getStartTime())).append("\n");
-        sb.append("   End: ").append(formatTime(tithi.getEndTime())).append("\n\n");
+        sb.append("   Start: ").append(tithi.getStartTime()).append("\n");
+        sb.append("   End: ").append(tithi.getEndTime()).append("\n\n");
         
         sb.append("2. VARA (Weekday)\n");
         sb.append("   Name: ").append(vara.getVaraName()).append(" (").append(vara.getSanskritName()).append(")\n");
@@ -115,20 +115,20 @@ public class PanchangResult {
         sb.append("   Name: ").append(nakshatra.getNakshatraName()).append(" (").append(nakshatra.getSanskritName()).append(")\n");
         sb.append("   Number: ").append(nakshatra.getNakshatraNumber()).append("\n");
         sb.append("   Ruling Planet: ").append(nakshatra.getRulingPlanet()).append("\n");
-        sb.append("   Start: ").append(formatTime(nakshatra.getStartTime())).append("\n");
-        sb.append("   End: ").append(formatTime(nakshatra.getEndTime())).append("\n\n");
+        sb.append("   Start: ").append(nakshatra.getStartTime()).append("\n");
+        sb.append("   End: ").append(nakshatra.getEndTime()).append("\n\n");
         
         sb.append("4. YOGA (Solar-Lunar Combination)\n");
         sb.append("   Name: ").append(yoga.getYogaName()).append(" (").append(yoga.getSanskritName()).append(")\n");
         sb.append("   Number: ").append(yoga.getYogaNumber()).append("\n");
-        sb.append("   Start: ").append(formatTime(yoga.getStartTime())).append("\n");
-        sb.append("   End: ").append(formatTime(yoga.getEndTime())).append("\n\n");
+        sb.append("   Start: ").append(yoga.getStartTime()).append("\n");
+        sb.append("   End: ").append(yoga.getEndTime()).append("\n\n");
         
         sb.append("5. KARANA (Half of Tithi)\n");
         sb.append("   Name: ").append(karana.getKaranaName()).append(" (").append(karana.getSanskritName()).append(")\n");
         sb.append("   Number: ").append(karana.getKaranaNumber()).append("\n");
-        sb.append("   Start: ").append(formatTime(karana.getStartTime())).append("\n");
-        sb.append("   End: ").append(formatTime(karana.getEndTime())).append("\n\n");
+        sb.append("   Start: ").append(karana.getStartTime()).append("\n");
+        sb.append("   End: ").append(karana.getEndTime()).append("\n\n");
         
         if (muhurta != null) {
             sb.append("AUSPICIOUS TIMINGS (MUHURTA)\n");
@@ -142,12 +142,6 @@ public class PanchangResult {
         }
         
         return sb.toString();
-    }
-
-    private String formatTime(double time) {
-        int hours = (int) time;
-        int minutes = (int) ((time - hours) * 60);
-        return String.format("%02d:%02d", hours, minutes);
     }
 
     @Override
@@ -190,12 +184,12 @@ public class PanchangResult {
         private final int tithiNumber;
         private final String tithiName;
         private final String sanskritName;
-        private final double startTime;
-        private final double endTime;
+        private final String startTime;
+        private final String endTime;
         private final boolean isShuklaPaksha;
 
         public TithiInfo(int tithiNumber, String tithiName, String sanskritName, 
-                        double startTime, double endTime, boolean isShuklaPaksha) {
+                        String startTime, String endTime, boolean isShuklaPaksha) {
             this.tithiNumber = tithiNumber;
             this.tithiName = tithiName;
             this.sanskritName = sanskritName;
@@ -208,8 +202,8 @@ public class PanchangResult {
         public int getTithiNumber() { return tithiNumber; }
         public String getTithiName() { return tithiName; }
         public String getSanskritName() { return sanskritName; }
-        public double getStartTime() { return startTime; }
-        public double getEndTime() { return endTime; }
+        public String getStartTime() { return startTime; }
+        public String getEndTime() { return endTime; }
         public boolean isShuklaPaksha() { return isShuklaPaksha; }
     }
 
@@ -238,11 +232,11 @@ public class PanchangResult {
         private final String nakshatraName;
         private final String sanskritName;
         private final String rulingPlanet;
-        private final double startTime;
-        private final double endTime;
+        private final String startTime;
+        private final String endTime;
 
         public NakshatraInfo(int nakshatraNumber, String nakshatraName, String sanskritName,
-                           String rulingPlanet, double startTime, double endTime) {
+                           String rulingPlanet, String startTime, String endTime) {
             this.nakshatraNumber = nakshatraNumber;
             this.nakshatraName = nakshatraName;
             this.sanskritName = sanskritName;
@@ -256,19 +250,19 @@ public class PanchangResult {
         public String getNakshatraName() { return nakshatraName; }
         public String getSanskritName() { return sanskritName; }
         public String getRulingPlanet() { return rulingPlanet; }
-        public double getStartTime() { return startTime; }
-        public double getEndTime() { return endTime; }
+        public String getStartTime() { return startTime; }
+        public String getEndTime() { return endTime; }
     }
 
     public static class YogaInfo {
         private final int yogaNumber;
         private final String yogaName;
         private final String sanskritName;
-        private final double startTime;
-        private final double endTime;
+        private final String startTime;
+        private final String endTime;
 
         public YogaInfo(int yogaNumber, String yogaName, String sanskritName,
-                       double startTime, double endTime) {
+                       String startTime, String endTime) {
             this.yogaNumber = yogaNumber;
             this.yogaName = yogaName;
             this.sanskritName = sanskritName;
@@ -280,19 +274,19 @@ public class PanchangResult {
         public int getYogaNumber() { return yogaNumber; }
         public String getYogaName() { return yogaName; }
         public String getSanskritName() { return sanskritName; }
-        public double getStartTime() { return startTime; }
-        public double getEndTime() { return endTime; }
+        public String getStartTime() { return startTime; }
+        public String getEndTime() { return endTime; }
     }
 
     public static class KaranaInfo {
         private final int karanaNumber;
         private final String karanaName;
         private final String sanskritName;
-        private final double startTime;
-        private final double endTime;
+        private final String startTime;
+        private final String endTime;
 
         public KaranaInfo(int karanaNumber, String karanaName, String sanskritName,
-                         double startTime, double endTime) {
+                         String startTime, String endTime) {
             this.karanaNumber = karanaNumber;
             this.karanaName = karanaName;
             this.sanskritName = sanskritName;
@@ -304,8 +298,8 @@ public class PanchangResult {
         public int getKaranaNumber() { return karanaNumber; }
         public String getKaranaName() { return karanaName; }
         public String getSanskritName() { return sanskritName; }
-        public double getStartTime() { return startTime; }
-        public double getEndTime() { return endTime; }
+        public String getStartTime() { return startTime; }
+        public String getEndTime() { return endTime; }
     }
 
     public static class MuhurtaInfo {

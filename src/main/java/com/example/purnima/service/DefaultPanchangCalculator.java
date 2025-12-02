@@ -44,7 +44,10 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         double tithiEndDecimal = toDecimalTime(tithiEndTime);
         
         PanchangResult.TithiInfo tithiInfo = new PanchangResult.TithiInfo(
-            tithiNumber, tithiName, tithiName, toDecimalTime(dateTime), tithiEndDecimal, lunarPhase.isShuklaPaksha()
+            tithiNumber, tithiName, tithiName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(tithiEndDecimal), 
+            lunarPhase.isShuklaPaksha()
         );
 
         // 2. Vara (Day of Week)
@@ -67,7 +70,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         double nakshatraEndDecimal = toDecimalTime(nakshatraEndTime);
         
         PanchangResult.NakshatraInfo nakshatraInfo = new PanchangResult.NakshatraInfo(
-            nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, toDecimalTime(dateTime), nakshatraEndDecimal
+            nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(nakshatraEndDecimal)
         );
 
         // 4. Yoga
@@ -79,7 +84,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         double yogaEndDecimal = toDecimalTime(yogaEndTime);
         
         PanchangResult.YogaInfo yogaInfo = new PanchangResult.YogaInfo(
-            yogaNumber, yogaName, yogaName, toDecimalTime(dateTime), yogaEndDecimal
+            yogaNumber, yogaName, yogaName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(yogaEndDecimal)
         );
 
         // 5. Karana
@@ -93,7 +100,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         double karanaEndDecimal = toDecimalTime(karanaEndTime);
         
         PanchangResult.KaranaInfo karanaInfo = new PanchangResult.KaranaInfo(
-            karanaNumber, karanaName, karanaName, toDecimalTime(dateTime), karanaEndDecimal
+            karanaNumber, karanaName, karanaName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(karanaEndDecimal)
         );
 
         // 6. Muhurta (Simplified placeholder)
@@ -121,7 +130,10 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         int tithiNumber = lunarPhase.getTithi();
         String tithiName = messageSource.getMessage("tithi." + tithiNumber, null, "Tithi " + tithiNumber, locale);
         LocalDateTime tithiEndTime = findTithiEndTime(dateTime, latitude, longitude, tithiNumber);
-        return new PanchangResult.TithiInfo(tithiNumber, tithiName, tithiName, toDecimalTime(dateTime), toDecimalTime(tithiEndTime), lunarPhase.isShuklaPaksha());
+        return new PanchangResult.TithiInfo(tithiNumber, tithiName, tithiName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(tithiEndTime)), 
+            lunarPhase.isShuklaPaksha());
     }
 
     @Override
@@ -143,7 +155,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String nakshatraName = messageSource.getMessage("nakshatra." + nakshatraNumber, null, "Nakshatra " + nakshatraNumber, locale);
         String nakshatraRulingPlanet = getNakshatraRulingPlanet(nakshatraNumber);
         LocalDateTime nakshatraEndTime = findNakshatraEndTime(dateTime, latitude, longitude, nakshatraNumber);
-        return new PanchangResult.NakshatraInfo(nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, toDecimalTime(dateTime), toDecimalTime(nakshatraEndTime));
+        return new PanchangResult.NakshatraInfo(nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(nakshatraEndTime)));
     }
 
     @Override
@@ -153,7 +167,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         int yogaNumber = yogaInfoObj.getYogaNumber();
         String yogaName = messageSource.getMessage("yoga." + yogaNumber, null, "Yoga " + yogaNumber, locale);
         LocalDateTime yogaEndTime = findYogaEndTime(dateTime, latitude, longitude, yogaNumber);
-        return new PanchangResult.YogaInfo(yogaNumber, yogaName, yogaName, toDecimalTime(dateTime), toDecimalTime(yogaEndTime));
+        return new PanchangResult.YogaInfo(yogaNumber, yogaName, yogaName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(yogaEndTime)));
     }
 
     @Override
@@ -164,7 +180,9 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String karanaKey = getKaranaKey(karanaNumber);
         String karanaName = messageSource.getMessage(karanaKey, null, "Karana " + karanaNumber, locale);
         LocalDateTime karanaEndTime = findKaranaEndTime(dateTime, latitude, longitude, karanaNumber);
-        return new PanchangResult.KaranaInfo(karanaNumber, karanaName, karanaName, toDecimalTime(dateTime), toDecimalTime(karanaEndTime));
+        return new PanchangResult.KaranaInfo(karanaNumber, karanaName, karanaName, 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(karanaEndTime)));
     }
 
     @Override
