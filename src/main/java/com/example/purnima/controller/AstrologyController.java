@@ -29,9 +29,21 @@ public class AstrologyController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam double latitude,
             @RequestParam double longitude,
-            @RequestParam String placeName) {
+            @RequestParam String placeName,
+            @RequestParam(required = false) String timezone) {
         
-        PanchangResult result = astrology.calculatePanchang(date, latitude, longitude, placeName);
+        PanchangResult result;
+        if (timezone != null && !timezone.isEmpty()) {
+            try {
+                java.time.ZoneId zoneId = java.time.ZoneId.of(timezone);
+                result = astrology.calculatePanchang(date, latitude, longitude, placeName, zoneId);
+            } catch (Exception e) {
+                // Fallback to default if timezone is invalid
+                result = astrology.calculatePanchang(date, latitude, longitude, placeName);
+            }
+        } else {
+            result = astrology.calculatePanchang(date, latitude, longitude, placeName);
+        }
         return ResponseEntity.ok(result);
     }
 
