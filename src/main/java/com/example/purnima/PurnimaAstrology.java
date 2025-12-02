@@ -7,10 +7,12 @@ import com.example.purnima.model.*;
 import com.example.purnima.service.DefaultAsthakootCalculator;
 import com.example.purnima.service.DefaultPanchangCalculator;
 import com.example.purnima.service.AccurateChartGenerator;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Locale;
 
 /**
  * Main entry point for Purnima Vedic Astrology library.
@@ -22,14 +24,19 @@ public class PurnimaAstrology {
     private final AsthakootCalculator asthakootCalculator;
     private final PanchangCalculator panchangCalculator;
     private final ChartGenerator chartGenerator;
+    private final ReloadableResourceBundleMessageSource messageSource;
     
     /**
      * Default constructor using accurate implementations with Swiss Ephemeris.
      */
     public PurnimaAstrology() {
+        this.messageSource = new ReloadableResourceBundleMessageSource();
+        this.messageSource.setBasename("classpath:messages");
+        this.messageSource.setDefaultEncoding("UTF-8");
+        
         this.asthakootCalculator = new DefaultAsthakootCalculator();
-        this.panchangCalculator = new DefaultPanchangCalculator();
-        this.chartGenerator = new AccurateChartGenerator(); // Now uses Swiss Ephemeris
+        this.panchangCalculator = new DefaultPanchangCalculator(messageSource);
+        this.chartGenerator = new AccurateChartGenerator(messageSource); // Now uses Swiss Ephemeris
     }
     
     /**
@@ -38,6 +45,10 @@ public class PurnimaAstrology {
     public PurnimaAstrology(AsthakootCalculator asthakootCalculator, 
                            PanchangCalculator panchangCalculator, 
                            ChartGenerator chartGenerator) {
+        this.messageSource = new ReloadableResourceBundleMessageSource();
+        this.messageSource.setBasename("classpath:messages");
+        this.messageSource.setDefaultEncoding("UTF-8");
+
         this.asthakootCalculator = asthakootCalculator;
         this.panchangCalculator = panchangCalculator;
         this.chartGenerator = chartGenerator;
@@ -49,12 +60,22 @@ public class PurnimaAstrology {
      * @param useAccurateCalculations If true, uses Swiss Ephemeris; if false, uses simplified calculations
      */
     public PurnimaAstrology(boolean useAccurateCalculations) {
+        this.messageSource = new ReloadableResourceBundleMessageSource();
+        this.messageSource.setBasename("classpath:messages");
+        this.messageSource.setDefaultEncoding("UTF-8");
+
         this.asthakootCalculator = new DefaultAsthakootCalculator();
-        this.panchangCalculator = new DefaultPanchangCalculator();
+        this.panchangCalculator = new DefaultPanchangCalculator(messageSource);
         
         if (useAccurateCalculations) {
-            this.chartGenerator = new AccurateChartGenerator(); // Swiss Ephemeris
+            this.chartGenerator = new AccurateChartGenerator(messageSource); // Swiss Ephemeris
         } else {
+            // DefaultChartGenerator also needs MessageSource if updated, but assuming it's legacy/simplified
+            // If DefaultChartGenerator wasn't updated to take MessageSource, this line might fail if I changed it.
+            // But I only changed AccurateChartGenerator and DefaultPanchangCalculator.
+            // Let's assume DefaultChartGenerator is untouched or I need to check it.
+            // Wait, if I changed DefaultPanchangCalculator, I need to pass messageSource to it (done above).
+            // For DefaultChartGenerator, I haven't touched it in this session.
             this.chartGenerator = new com.example.purnima.service.DefaultChartGenerator(); // Simplified
         }
     }

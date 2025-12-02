@@ -7,16 +7,29 @@ import com.example.purnima.model.Planet;
 import com.example.purnima.model.Rashi;
 import com.example.purnima.util.SwissEphCalculator;
 import com.example.purnima.util.SwissEphCalculator.PlanetaryPosition;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Accurate implementation of ChartGenerator using Swiss Ephemeris.
  * Provides real astronomical calculations for planetary positions and chart generation.
  */
+@Service
 public class AccurateChartGenerator implements ChartGenerator {
+
+    private final MessageSource messageSource;
+
+    @Autowired
+    public AccurateChartGenerator(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
     
     @Override
     public ChartResult generateBirthChart(BirthData birthData) {
@@ -138,10 +151,10 @@ public class AccurateChartGenerator implements ChartGenerator {
         LocalDateTime startDate = birthData.getBirthDateTime();
         LocalDateTime endDate = startDate.plusYears(120); // Assuming 120 years lifespan
         
-        String currentDasha = "Jupiter"; // Simplified
-        String currentAntardasha = "Saturn"; // Simplified
-        
         DashaPeriod[] periods = generateDashaPeriods(dashaType, startDate, endDate);
+        
+        String currentDasha = periods.length > 0 ? periods[0].getPlanet() : "Unknown";
+        String currentAntardasha = periods.length > 0 ? periods[0].getPlanet() : "Unknown";
         
         return new DashaResult(currentDasha, currentAntardasha, startDate, endDate, periods);
     }
@@ -150,6 +163,7 @@ public class AccurateChartGenerator implements ChartGenerator {
     
     private ChartResult.PlanetaryPosition[] generateAccuratePlanetaryPositions(BirthData birthData) {
         List<ChartResult.PlanetaryPosition> positions = new ArrayList<>();
+        Locale locale = LocaleContextHolder.getLocale();
         
         // Generate positions for all planets using Swiss Ephemeris
         Planet[] planets = Planet.values();
@@ -174,9 +188,10 @@ public class AccurateChartGenerator implements ChartGenerator {
                 
                 // Determine exaltation status
                 String exaltationStatus = determineExaltationStatus(planet, swissPos.getLongitude());
+                String localizedStatus = localizeStatus(exaltationStatus, locale);
                 
                 positions.add(new ChartResult.PlanetaryPosition(
-                    planet, rashi, degreeInRashi, houseNumber, swissPos.isRetrograde(), exaltationStatus
+                    planet, rashi, degreeInRashi, houseNumber, swissPos.isRetrograde(), localizedStatus
                 ));
                 
             } catch (Exception e) {
@@ -193,13 +208,6 @@ public class AccurateChartGenerator implements ChartGenerator {
         ChartResult.House[] houses = new ChartResult.House[12];
         
         try {
-            // Calculate accurate ascendant using Swiss Ephemeris
-            double ascendantLongitude = SwissEphCalculator.calculateAscendant(
-                birthData.getBirthDateTime(),
-                birthData.getLatitude(),
-                birthData.getLongitude()
-            );
-            
             // Calculate house cusps using Swiss Ephemeris
             double[] houseCusps = SwissEphCalculator.calculateHouseCusps(
                 birthData.getBirthDateTime(),
@@ -239,12 +247,6 @@ public class AccurateChartGenerator implements ChartGenerator {
     
     private int calculateHouseNumber(double planetLongitude, BirthData birthData) {
         try {
-            double ascendantLongitude = SwissEphCalculator.calculateAscendant(
-                birthData.getBirthDateTime(),
-                birthData.getLatitude(),
-                birthData.getLongitude()
-            );
-            
             double[] houseCusps = SwissEphCalculator.calculateHouseCusps(
                 birthData.getBirthDateTime(),
                 birthData.getLatitude(),
@@ -256,8 +258,11 @@ public class AccurateChartGenerator implements ChartGenerator {
                 double startCusp = houseCusps[i];
                 double endCusp = (i < 11) ? houseCusps[i + 1] : houseCusps[0] + 360;
                 
-                if (planetLongitude >= startCusp && planetLongitude < endCusp) {
-                    return i + 1;
+                if (startCusp < endCusp) {
+                    if (planetLongitude >= startCusp && planetLongitude < endCusp) return i + 1;
+                } else {
+                    // House crosses 360/0 boundary
+                    if (planetLongitude >= startCusp || planetLongitude < endCusp) return i + 1;
                 }
             }
             
@@ -294,6 +299,18 @@ public class AccurateChartGenerator implements ChartGenerator {
         if (isMoolatrikona(planet, rashi, degreeInRashi)) return "Moolatrikona";
         
         return "Neutral"; // Default
+    }
+    
+    private String localizeStatus(String status, Locale locale) {
+        switch (status) {
+            case "Deep Exaltation": return messageSource.getMessage("chart.status.deep_exaltation", null, status, locale);
+            case "Deep Debilitation": return messageSource.getMessage("chart.status.deep_debilitation", null, status, locale);
+            case "Exalted Sign": return messageSource.getMessage("chart.status.exalted_sign", null, status, locale);
+            case "Debilitated Sign": return messageSource.getMessage("chart.status.debilitated_sign", null, status, locale);
+            case "Own Sign": return messageSource.getMessage("chart.status.ownsign", null, status, locale);
+            case "Moolatrikona": return messageSource.getMessage("chart.status.moolatrikona", null, status, locale);
+            default: return messageSource.getMessage("chart.status.neutral", null, status, locale);
+        }
     }
     
     private boolean isDeepExaltation(Planet planet, Rashi rashi, double degree) {
@@ -427,7 +444,7 @@ public class AccurateChartGenerator implements ChartGenerator {
         return houses;
     }
     
-    // Format generation methods (same as DefaultChartGenerator)
+    // Format generation methods
     private String generateJsonFormat(ChartResult chartResult) {
         StringBuilder json = new StringBuilder();
         json.append("{\n");
@@ -491,6 +508,7 @@ public class AccurateChartGenerator implements ChartGenerator {
     }
     
     private String generateHtmlFormat(ChartResult chartResult) {
+        Locale locale = LocaleContextHolder.getLocale();
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>\n<html>\n<head>\n");
         html.append("<title>Birth Chart - ").append(chartResult.getBirthData().getPlaceName()).append("</title>\n");
@@ -503,15 +521,21 @@ public class AccurateChartGenerator implements ChartGenerator {
         html.append("<h1>Birth Chart (Swiss Ephemeris)</h1>\n");
         html.append("<p><strong>Name:</strong> ").append(chartResult.getBirthData().getPlaceName()).append("</p>\n");
         html.append("<p><strong>Date & Time:</strong> ").append(chartResult.getBirthData().getBirthDateTime()).append("</p>\n");
-        html.append("<p><strong>Ascendant:</strong> ").append(chartResult.getAscendant().getRashi().getEnglishName()).append("</p>\n");
+        
+        String ascendantName = messageSource.getMessage(chartResult.getAscendant().getRashi().getMessageKey(), null, chartResult.getAscendant().getRashi().getEnglishName(), locale);
+        html.append("<p><strong>Ascendant:</strong> ").append(ascendantName).append("</p>\n");
+        
         html.append("<h2>Planetary Positions</h2>\n");
         html.append("<table>\n");
         html.append("<tr><th>Planet</th><th>Rashi</th><th>Degree</th><th>House</th><th>Retrograde</th><th>Exaltation</th></tr>\n");
         
         for (ChartResult.PlanetaryPosition pos : chartResult.getPlanetaryPositions()) {
+            String planetName = messageSource.getMessage(pos.getPlanet().getMessageKey(), null, pos.getPlanet().getEnglishName(), locale);
+            String rashiName = messageSource.getMessage(pos.getRashi().getMessageKey(), null, pos.getRashi().getEnglishName(), locale);
+            
             html.append("<tr>\n");
-            html.append("<td>").append(pos.getPlanet().getEnglishName()).append("</td>\n");
-            html.append("<td>").append(pos.getRashi().getEnglishName()).append("</td>\n");
+            html.append("<td>").append(planetName).append("</td>\n");
+            html.append("<td>").append(rashiName).append("</td>\n");
             html.append("<td>").append(String.format("%.2f", pos.getDegreeInRashi())).append("°</td>\n");
             html.append("<td>").append(pos.getHouseNumber()).append("</td>\n");
             html.append("<td>").append(pos.isRetrograde() ? "Yes" : "No").append("</td>\n");
@@ -525,12 +549,16 @@ public class AccurateChartGenerator implements ChartGenerator {
     }
     
     private String generateCsvFormat(ChartResult chartResult) {
+        Locale locale = LocaleContextHolder.getLocale();
         StringBuilder csv = new StringBuilder();
         csv.append("Planet,Rashi,Degree,House,Retrograde,Exaltation\n");
         
         for (ChartResult.PlanetaryPosition pos : chartResult.getPlanetaryPositions()) {
-            csv.append(pos.getPlanet().getEnglishName()).append(",");
-            csv.append(pos.getRashi().getEnglishName()).append(",");
+            String planetName = messageSource.getMessage(pos.getPlanet().getMessageKey(), null, pos.getPlanet().getEnglishName(), locale);
+            String rashiName = messageSource.getMessage(pos.getRashi().getMessageKey(), null, pos.getRashi().getEnglishName(), locale);
+            
+            csv.append(planetName).append(",");
+            csv.append(rashiName).append(",");
             csv.append(String.format("%.2f", pos.getDegreeInRashi())).append(",");
             csv.append(pos.getHouseNumber()).append(",");
             csv.append(pos.isRetrograde() ? "Yes" : "No").append(",");
@@ -670,25 +698,7 @@ public class AccurateChartGenerator implements ChartGenerator {
             return new DashaPeriod[0]; // Only Vimshottari supported for now
         }
         
-        // 1. Find Moon's position
-        ChartResult.PlanetaryPosition moonPos = null;
         try {
-            // We need to recalculate or store Moon position. 
-            // Since we don't have direct access to positions here without passing them,
-            // we'll assume we can get it from SwissEphCalculator again or pass it.
-            // For now, let's recalculate Moon for accuracy.
-            // Ideally, we should pass positions to this method.
-            // But since interface doesn't allow, we'll recalculate.
-             // Wait, generateDashaChart takes BirthData, so we can recalculate.
-             // But wait, generateDashaChart calls generateDashaPeriods.
-             // Let's implement full logic in generateDashaChart instead of this helper if needed,
-             // but this helper is called by generateDashaChart.
-             // We'll recalculate Moon position here.
-             
-             // Actually, let's just use a simplified calculation for now as we don't have easy access 
-             // to the full SwissEph instance without re-initializing.
-             // But SwissEphCalculator static methods are available.
-             
              // Let's get Moon longitude
              com.example.purnima.util.SwissEphCalculator.PlanetaryPosition moon = 
                  SwissEphCalculator.calculatePlanetPosition(startDate, 0, 0, "Moon"); // Lat/Lon don't matter much for Moon longitude

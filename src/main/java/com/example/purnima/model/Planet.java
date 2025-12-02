@@ -4,25 +4,27 @@ package com.example.purnima.model;
  * Represents the nine planets (grahas) in Vedic astrology.
  */
 public enum Planet {
-    SUN("Surya", "सूर्य", "☉", 0, 0),
-    MOON("Chandra", "चंद्र", "☽", 1, 1),
-    MARS("Mangal", "मंगल", "♂", 2, 4),
-    MERCURY("Budh", "बुध", "☿", 3, 2),
-    JUPITER("Guru", "गुरु", "♃", 4, 5),
-    VENUS("Shukra", "शुक्र", "♀", 5, 3),
-    SATURN("Shani", "शनि", "♄", 6, 6),
-    RAHU("Rahu", "राहु", "☊", 7, 10),
-    KETU("Ketu", "केतु", "☋", 8, 12);
+    SUN("Sun", "Surya", "planet.sun", "☉", 0, 0),
+    MOON("Moon", "Chandra", "planet.moon", "☽", 1, 1),
+    MARS("Mars", "Mangala", "planet.mars", "♂", 2, 4),
+    MERCURY("Mercury", "Budha", "planet.mercury", "☿", 3, 2),
+    JUPITER("Jupiter", "Guru", "planet.jupiter", "♃", 4, 5),
+    VENUS("Venus", "Shukra", "planet.venus", "♀", 5, 3),
+    SATURN("Saturn", "Shani", "planet.saturn", "♄", 6, 6),
+    RAHU("Rahu", "Rahu", "planet.rahu", "☊", 7, 10),
+    KETU("Ketu", "Ketu", "planet.ketu", "☋", 8, 12);
 
     private final String englishName;
     private final String sanskritName;
+    private final String messageKey;
     private final String symbol;
     private final int index;
     private final int swissEphId;
 
-    Planet(String englishName, String sanskritName, String symbol, int index, int swissEphId) {
+    Planet(String englishName, String sanskritName, String messageKey, String symbol, int index, int swissEphId) {
         this.englishName = englishName;
         this.sanskritName = sanskritName;
+        this.messageKey = messageKey;
         this.symbol = symbol;
         this.index = index;
         this.swissEphId = swissEphId;
@@ -34,6 +36,10 @@ public enum Planet {
 
     public String getSanskritName() {
         return sanskritName;
+    }
+
+    public String getMessageKey() {
+        return messageKey;
     }
 
     public String getSymbol() {
@@ -84,10 +90,5 @@ public enum Planet {
             }
         }
         throw new IllegalArgumentException("Unknown Swiss Ephemeris ID: " + swissEphId);
-    }
-
-    @Override
-    public String toString() {
-        return englishName + " (" + sanskritName + ")";
     }
 } 

@@ -4,30 +4,32 @@ package com.example.purnima.model;
  * Represents the 12 zodiac signs (rashis) in Vedic astrology.
  */
 public enum Rashi {
-    MESH("Aries", "मेष", "♈", Element.FIRE, Quality.CARDINAL, 0, 30),
-    VRISHABH("Taurus", "वृषभ", "♉", Element.EARTH, Quality.FIXED, 30, 60),
-    MITHUN("Gemini", "मिथुन", "♊", Element.AIR, Quality.MUTABLE, 60, 90),
-    KARK("Cancer", "कर्क", "♋", Element.WATER, Quality.CARDINAL, 90, 120),
-    SINH("Leo", "सिंह", "♌", Element.FIRE, Quality.FIXED, 120, 150),
-    KANYA("Virgo", "कन्या", "♍", Element.EARTH, Quality.MUTABLE, 150, 180),
-    TULA("Libra", "तुला", "♎", Element.AIR, Quality.CARDINAL, 180, 210),
-    VRISHCHIK("Scorpio", "वृश्चिक", "♏", Element.WATER, Quality.FIXED, 210, 240),
-    DHANU("Sagittarius", "धनु", "♐", Element.FIRE, Quality.MUTABLE, 240, 270),
-    MAKAR("Capricorn", "मकर", "♑", Element.EARTH, Quality.CARDINAL, 270, 300),
-    KUMBH("Aquarius", "कुंभ", "♒", Element.AIR, Quality.FIXED, 300, 330),
-    MEEN("Pisces", "मीन", "♓", Element.WATER, Quality.MUTABLE, 330, 360);
+    MESH("Aries", "Mesha", "rashi.aries", "♈", Element.FIRE, Quality.CARDINAL, 0, 30),
+    VRISHABH("Taurus", "Vrishabha", "rashi.taurus", "♉", Element.EARTH, Quality.FIXED, 30, 60),
+    MITHUN("Gemini", "Mithuna", "rashi.gemini", "♊", Element.AIR, Quality.MUTABLE, 60, 90),
+    KARK("Cancer", "Karka", "rashi.cancer", "♋", Element.WATER, Quality.CARDINAL, 90, 120),
+    SINH("Leo", "Simha", "rashi.leo", "♌", Element.FIRE, Quality.FIXED, 120, 150),
+    KANYA("Virgo", "Kanya", "rashi.virgo", "♍", Element.EARTH, Quality.MUTABLE, 150, 180),
+    TULA("Libra", "Tula", "rashi.libra", "♎", Element.AIR, Quality.CARDINAL, 180, 210),
+    VRISHCHIK("Scorpio", "Vrishchika", "rashi.scorpio", "♏", Element.WATER, Quality.FIXED, 210, 240),
+    DHANU("Sagittarius", "Dhanu", "rashi.sagittarius", "♐", Element.FIRE, Quality.MUTABLE, 240, 270),
+    MAKAR("Capricorn", "Makara", "rashi.capricorn", "♑", Element.EARTH, Quality.CARDINAL, 270, 300),
+    KUMBH("Aquarius", "Kumbha", "rashi.aquarius", "♒", Element.AIR, Quality.FIXED, 300, 330),
+    MEEN("Pisces", "Meena", "rashi.pisces", "♓", Element.WATER, Quality.MUTABLE, 330, 360);
 
     private final String englishName;
     private final String sanskritName;
+    private final String messageKey;
     private final String symbol;
     private final Element element;
     private final Quality quality;
     private final int startDegree;
     private final int endDegree;
 
-    Rashi(String englishName, String sanskritName, String symbol, Element element, Quality quality, int startDegree, int endDegree) {
+    Rashi(String englishName, String sanskritName, String messageKey, String symbol, Element element, Quality quality, int startDegree, int endDegree) {
         this.englishName = englishName;
         this.sanskritName = sanskritName;
+        this.messageKey = messageKey;
         this.symbol = symbol;
         this.element = element;
         this.quality = quality;
@@ -41,6 +43,10 @@ public enum Rashi {
 
     public String getSanskritName() {
         return sanskritName;
+    }
+
+    public String getMessageKey() {
+        return messageKey;
     }
 
     public String getSymbol() {
@@ -85,7 +91,7 @@ public enum Rashi {
 
     @Override
     public String toString() {
-        return englishName + " (" + sanskritName + ")";
+        return englishName;
     }
 
     /**
