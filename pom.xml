@@ -19,6 +19,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- Date and Time handling -->
         <dependency>
@@ -43,9 +50,9 @@
         
         <!-- Swiss Ephemeris -->
         <dependency>
-            <groupId>org.himalay</groupId>
+            <groupId>com.github.krishnact</groupId>
             <artifactId>swisseph</artifactId>
-            <version>2.01.00-01</version>
+            <version>master-SNAPSHOT</version>
         </dependency>
         
         <!-- Logging -->
