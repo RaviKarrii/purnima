@@ -35,7 +35,14 @@ public class I18nTest {
         BirthData birthData = new BirthData(dateTime, lat, lon, place);
 
         // Test Locales
-        Locale[] locales = {Locale.ENGLISH, new Locale("hi"), new Locale("te")};
+        Locale[] locales = {
+            Locale.ENGLISH, 
+            new Locale("hi"), 
+            new Locale("te"),
+            new Locale("sa"),
+            new Locale("ta"),
+            new Locale("kn")
+        };
 
         for (Locale locale : locales) {
             System.out.println("\nTesting Locale: " + locale.getDisplayName());
