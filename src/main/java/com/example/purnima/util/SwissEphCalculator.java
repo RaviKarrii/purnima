@@ -399,4 +399,49 @@ public class SwissEphCalculator {
         public int getNakshatraNumber() { return nakshatraNumber; }
         public double getDegreeInNakshatra() { return degreeInNakshatra; }
     }
+    /**
+     * Calculate Karana for a given date, time, and location.
+     * 
+     * @param dateTime Date and time
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @return KaranaInfo object containing karana details
+     */
+    public static KaranaInfo calculateKarana(LocalDateTime dateTime, double latitude, double longitude) {
+        try {
+            // Get Sun and Moon positions
+            PlanetaryPosition sunPos = calculatePlanetPosition(dateTime, latitude, longitude, "Sun");
+            PlanetaryPosition moonPos = calculatePlanetPosition(dateTime, latitude, longitude, "Moon");
+            
+            // Calculate lunar phase
+            double lunarPhase = moonPos.getLongitude() - sunPos.getLongitude();
+            if (lunarPhase < 0) {
+                lunarPhase += 360;
+            }
+            
+            // Calculate Karana (1-60)
+            // Each Karana is 6 degrees
+            int karanaNumber = (int) Math.floor(lunarPhase / 6) + 1;
+            if (karanaNumber > 60) karanaNumber = 60;
+            
+            return new KaranaInfo(karanaNumber);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error calculating karana", e);
+        }
+    }
+
+    /**
+     * Represents Karana information.
+     */
+    public static class KaranaInfo {
+        private final int karanaNumber;
+        
+        public KaranaInfo(int karanaNumber) {
+            this.karanaNumber = karanaNumber;
+        }
+        
+        // Getters
+        public int getKaranaNumber() { return karanaNumber; }
+    }
 } 

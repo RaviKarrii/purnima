@@ -18,9 +18,10 @@ public interface PanchangCalculator {
      * @param date Date for which Panchang is to be calculated
      * @param latitude Latitude of the location
      * @param longitude Longitude of the location
+     * @param placeName Name of the location
      * @return PanchangResult containing all five elements
      */
-    PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude);
+    PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName);
     
     /**
      * Calculate complete Panchang for a specific date-time and location.
@@ -28,9 +29,10 @@ public interface PanchangCalculator {
      * @param dateTime Date and time for which Panchang is to be calculated
      * @param latitude Latitude of the location
      * @param longitude Longitude of the location
+     * @param placeName Name of the location
      * @return PanchangResult containing all five elements
      */
-    PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude);
+    PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName);
     
     /**
      * Calculate complete Panchang using BirthData.

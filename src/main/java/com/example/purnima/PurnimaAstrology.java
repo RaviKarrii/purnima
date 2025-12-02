@@ -96,7 +96,7 @@ public class PurnimaAstrology {
      * @return PanchangResult containing all five elements
      */
     public PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName) {
-        return panchangCalculator.calculatePanchang(date, latitude, longitude);
+        return panchangCalculator.calculatePanchang(date, latitude, longitude, placeName);
     }
     
     /**
@@ -109,7 +109,7 @@ public class PurnimaAstrology {
      * @return PanchangResult containing all five elements
      */
     public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName) {
-        return panchangCalculator.calculatePanchang(dateTime, latitude, longitude);
+        return panchangCalculator.calculatePanchang(dateTime, latitude, longitude, placeName);
     }
     
     /**
