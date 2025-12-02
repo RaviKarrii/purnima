@@ -21,8 +21,29 @@ public interface PanchangCalculator {
      * @param placeName Name of the location
      * @return PanchangResult containing all five elements
      */
+    /**
+     * Calculate complete Panchang for a specific date and location.
+     * 
+     * @param date Date for which Panchang is to be calculated
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the location
+     * @return PanchangResult containing all five elements
+     */
     PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName);
-    
+
+    /**
+     * Calculate complete Panchang for a specific date and location with TimeZone.
+     * 
+     * @param date Date for which Panchang is to be calculated
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the location
+     * @param zoneId TimeZone of the location
+     * @return PanchangResult containing all five elements
+     */
+    PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName, java.time.ZoneId zoneId);
+
     /**
      * Calculate complete Panchang for a specific date-time and location.
      * 
@@ -33,6 +54,18 @@ public interface PanchangCalculator {
      * @return PanchangResult containing all five elements
      */
     PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName);
+
+    /**
+     * Calculate complete Panchang for a specific date-time and location with TimeZone.
+     * 
+     * @param dateTime Date and time for which Panchang is to be calculated
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the location
+     * @param zoneId TimeZone of the location
+     * @return PanchangResult containing all five elements
+     */
+    PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName, java.time.ZoneId zoneId);
     
     /**
      * Calculate complete Panchang using BirthData.

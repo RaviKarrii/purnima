@@ -28,11 +28,21 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
 
     @Override
     public PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName) {
-        return calculatePanchang(date.atStartOfDay(), latitude, longitude, placeName);
+        return calculatePanchang(date.atStartOfDay(), latitude, longitude, placeName, java.time.ZoneId.systemDefault());
+    }
+
+    @Override
+    public PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName, java.time.ZoneId zoneId) {
+        return calculatePanchang(date.atStartOfDay(), latitude, longitude, placeName, zoneId);
     }
 
     @Override
     public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName) {
+        return calculatePanchang(dateTime, latitude, longitude, placeName, java.time.ZoneId.systemDefault());
+    }
+
+    @Override
+    public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName, java.time.ZoneId zoneId) {
         Locale locale = LocaleContextHolder.getLocale();
 
         // 1. Tithi
@@ -41,11 +51,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String tithiName = messageSource.getMessage("tithi." + tithiNumber, null, "Tithi " + tithiNumber, locale);
         
         LocalDateTime tithiEndTime = findTithiEndTime(dateTime, latitude, longitude, tithiNumber);
-        double tithiEndDecimal = toDecimalTime(tithiEndTime);
+        double tithiEndDecimal = toDecimalTime(tithiEndTime, zoneId);
         
         PanchangResult.TithiInfo tithiInfo = new PanchangResult.TithiInfo(
             tithiNumber, tithiName, tithiName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
             com.example.purnima.util.TimeUtil.formatDecimalTime(tithiEndDecimal), 
             lunarPhase.isShuklaPaksha()
         );
@@ -67,11 +77,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String nakshatraRulingPlanet = getNakshatraRulingPlanet(nakshatraNumber);
         
         LocalDateTime nakshatraEndTime = findNakshatraEndTime(dateTime, latitude, longitude, nakshatraNumber);
-        double nakshatraEndDecimal = toDecimalTime(nakshatraEndTime);
+        double nakshatraEndDecimal = toDecimalTime(nakshatraEndTime, zoneId);
         
         PanchangResult.NakshatraInfo nakshatraInfo = new PanchangResult.NakshatraInfo(
             nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
             com.example.purnima.util.TimeUtil.formatDecimalTime(nakshatraEndDecimal)
         );
 
@@ -81,11 +91,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String yogaName = messageSource.getMessage("yoga." + yogaNumber, null, "Yoga " + yogaNumber, locale);
         
         LocalDateTime yogaEndTime = findYogaEndTime(dateTime, latitude, longitude, yogaNumber);
-        double yogaEndDecimal = toDecimalTime(yogaEndTime);
+        double yogaEndDecimal = toDecimalTime(yogaEndTime, zoneId);
         
         PanchangResult.YogaInfo yogaInfo = new PanchangResult.YogaInfo(
             yogaNumber, yogaName, yogaName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
             com.example.purnima.util.TimeUtil.formatDecimalTime(yogaEndDecimal)
         );
 
@@ -97,11 +107,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         String karanaName = messageSource.getMessage(karanaKey, null, "Karana " + karanaNumber, locale);
         
         LocalDateTime karanaEndTime = findKaranaEndTime(dateTime, latitude, longitude, karanaNumber);
-        double karanaEndDecimal = toDecimalTime(karanaEndTime);
+        double karanaEndDecimal = toDecimalTime(karanaEndTime, zoneId);
         
         PanchangResult.KaranaInfo karanaInfo = new PanchangResult.KaranaInfo(
             karanaNumber, karanaName, karanaName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime)), 
+            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
             com.example.purnima.util.TimeUtil.formatDecimalTime(karanaEndDecimal)
         );
 
@@ -271,5 +281,13 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
 
     private double toDecimalTime(LocalDateTime dt) {
         return dt.getHour() + (dt.getMinute() / 60.0) + (dt.getSecond() / 3600.0);
+    }
+
+    private double toDecimalTime(LocalDateTime dt, java.time.ZoneId zoneId) {
+        // dt is in UT (from SwissEph), convert to target zoneId
+        java.time.ZonedDateTime utZdt = java.time.ZonedDateTime.of(dt, java.time.ZoneId.of("UTC"));
+        java.time.ZonedDateTime targetZdt = utZdt.withZoneSameInstant(zoneId);
+        LocalDateTime targetDt = targetZdt.toLocalDateTime();
+        return targetDt.getHour() + (targetDt.getMinute() / 60.0) + (targetDt.getSecond() / 3600.0);
     }
 }

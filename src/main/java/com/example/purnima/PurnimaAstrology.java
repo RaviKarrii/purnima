@@ -119,6 +119,20 @@ public class PurnimaAstrology {
     public PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName) {
         return panchangCalculator.calculatePanchang(date, latitude, longitude, placeName);
     }
+
+    /**
+     * Calculate Panchang for a specific date and location with TimeZone.
+     * 
+     * @param date Date for Panchang calculation
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the place
+     * @param zoneId TimeZone of the location
+     * @return PanchangResult containing all five elements
+     */
+    public PanchangResult calculatePanchang(LocalDate date, double latitude, double longitude, String placeName, ZoneId zoneId) {
+        return panchangCalculator.calculatePanchang(date, latitude, longitude, placeName, zoneId);
+    }
     
     /**
      * Calculate Panchang for a specific date-time and location.
@@ -131,6 +145,20 @@ public class PurnimaAstrology {
      */
     public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName) {
         return panchangCalculator.calculatePanchang(dateTime, latitude, longitude, placeName);
+    }
+
+    /**
+     * Calculate Panchang for a specific date-time and location with TimeZone.
+     * 
+     * @param dateTime Date and time for Panchang calculation
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the place
+     * @param zoneId TimeZone of the location
+     * @return PanchangResult containing all five elements
+     */
+    public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName, ZoneId zoneId) {
+        return panchangCalculator.calculatePanchang(dateTime, latitude, longitude, placeName, zoneId);
     }
     
     /**
@@ -146,6 +174,21 @@ public class PurnimaAstrology {
         PanchangResult result = calculatePanchang(date, latitude, longitude, placeName);
         return result.getSummary();
     }
+
+    /**
+     * Get Panchang summary for a specific date and location with TimeZone.
+     * 
+     * @param date Date for Panchang calculation
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the place
+     * @param zoneId TimeZone of the location
+     * @return Formatted Panchang summary
+     */
+    public String getPanchangSummary(LocalDate date, double latitude, double longitude, String placeName, ZoneId zoneId) {
+        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName, zoneId);
+        return result.getSummary();
+    }
     
     /**
      * Get detailed Panchang information for a specific date and location.
@@ -158,6 +201,21 @@ public class PurnimaAstrology {
      */
     public String getPanchangDetails(LocalDate date, double latitude, double longitude, String placeName) {
         PanchangResult result = calculatePanchang(date, latitude, longitude, placeName);
+        return result.getDetailedInfo();
+    }
+
+    /**
+     * Get detailed Panchang information for a specific date and location with TimeZone.
+     * 
+     * @param date Date for Panchang calculation
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param placeName Name of the place
+     * @param zoneId TimeZone of the location
+     * @return Detailed Panchang information
+     */
+    public String getPanchangDetails(LocalDate date, double latitude, double longitude, String placeName, ZoneId zoneId) {
+        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName, zoneId);
         return result.getDetailedInfo();
     }
     
@@ -308,10 +366,23 @@ public class PurnimaAstrology {
                         String place = args[4];
                         
                         System.out.println("Calculating Panchang for " + date + " at " + place + "...");
-                        String panchang = astrology.getPanchangSummary(date, lat, lon, place);
+                        String panchang;
+                        if (args.length >= 6) {
+                            String zoneIdStr = args[5];
+                            try {
+                                ZoneId zoneId = ZoneId.of(zoneIdStr);
+                                System.out.println("Using TimeZone: " + zoneId);
+                                panchang = astrology.getPanchangSummary(date, lat, lon, place, zoneId);
+                            } catch (Exception e) {
+                                System.out.println("Invalid TimeZone: " + zoneIdStr + ". Using system default.");
+                                panchang = astrology.getPanchangSummary(date, lat, lon, place);
+                            }
+                        } else {
+                            panchang = astrology.getPanchangSummary(date, lat, lon, place);
+                        }
                         System.out.println(panchang);
                     } else {
-                        System.out.println("Usage: panchang <date> <latitude> <longitude> <place>");
+                        System.out.println("Usage: panchang <date> <latitude> <longitude> <place> [timezone]");
                     }
                     break;
                     

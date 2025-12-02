@@ -444,4 +444,14 @@ public class SwissEphCalculator {
         // Getters
         public int getKaranaNumber() { return karanaNumber; }
     }
+    /**
+     * Get Ayanamsa for a specific date.
+     * 
+     * @param dateTime Date and time
+     * @return Ayanamsa value in degrees
+     */
+    public static double getAyanamsa(LocalDateTime dateTime) {
+        double julianDay = dateTimeToJulianDay(dateTime);
+        return sw.swe_get_ayanamsa_ut(julianDay);
+    }
 } 

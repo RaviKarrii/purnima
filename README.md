@@ -148,8 +148,8 @@ System.out.println(chartSummary);
 You can run the JAR file directly to perform calculations.
 
 ```bash
-# Calculate Panchang
-java -jar target/purnima-1.0.0-jar-with-dependencies.jar panchang 2024-01-15 19.0760 72.8777 Mumbai
+# Calculate Panchang (optional timezone)
+java -jar target/purnima-1.0.0-jar-with-dependencies.jar panchang 2024-01-15 19.0760 72.8777 Mumbai [Asia/Kolkata]
 
 # Generate Birth Chart
 java -jar target/purnima-1.0.0-jar-with-dependencies.jar chart 1990-05-15T14:30:00 19.0760 72.8777 Mumbai
@@ -170,7 +170,7 @@ The library exposes a REST-like API structure (though currently implemented as a
 #### 1. Get Panchang
 Calculate Tithi, Vara, Nakshatra, Yoga, Karana.
 - **Method**: `GET /panchang` (Conceptual)
-- **Parameters**: `date`, `latitude`, `longitude`, `placeName`
+- **Parameters**: `date`, `latitude`, `longitude`, `placeName`, `timezone` (optional)
 - **Output**: JSON with Panchang elements and end times.
 
 #### 2. Get Birth Chart
