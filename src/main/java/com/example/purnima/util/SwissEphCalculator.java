@@ -338,6 +338,52 @@ public class SwissEphCalculator {
     }
     
     /**
+     * Calculate Yoga for a given date, time, and location.
+     * 
+     * @param dateTime Date and time
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @return YogaInfo object containing yoga details
+     */
+    public static YogaInfo calculateYoga(LocalDateTime dateTime, double latitude, double longitude) {
+        try {
+            // Get Sun and Moon positions
+            PlanetaryPosition sunPos = calculatePlanetPosition(dateTime, latitude, longitude, "Sun");
+            PlanetaryPosition moonPos = calculatePlanetPosition(dateTime, latitude, longitude, "Moon");
+            
+            // Calculate Yoga
+            // Yoga is based on the sum of Sun and Moon longitudes
+            double sumLongitude = sunPos.getLongitude() + moonPos.getLongitude();
+            if (sumLongitude >= 360) {
+                sumLongitude -= 360;
+            }
+            
+            // There are 27 Yogas, each 13 degrees 20 minutes (13.3333 degrees)
+            int yogaNumber = (int) Math.floor(sumLongitude / 13.333333333) + 1;
+            if (yogaNumber > 27) yogaNumber = 27;
+            
+            return new YogaInfo(yogaNumber);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error calculating yoga", e);
+        }
+    }
+
+    /**
+     * Represents Yoga information.
+     */
+    public static class YogaInfo {
+        private final int yogaNumber;
+        
+        public YogaInfo(int yogaNumber) {
+            this.yogaNumber = yogaNumber;
+        }
+        
+        // Getters
+        public int getYogaNumber() { return yogaNumber; }
+    }
+
+    /**
      * Represents Nakshatra information.
      */
     public static class NakshatraInfo {

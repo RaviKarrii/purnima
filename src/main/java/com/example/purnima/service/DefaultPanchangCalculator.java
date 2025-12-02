@@ -44,11 +44,12 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
     
     @Override
     public TithiInfo calculateTithi(LocalDateTime dateTime, double latitude, double longitude) {
-        // Simplified Tithi calculation
-        // In actual implementation, this would use astronomical calculations
+        // Use Swiss Ephemeris for accurate calculation
+        com.example.purnima.util.SwissEphCalculator.LunarPhase lunarPhase = 
+            com.example.purnima.util.SwissEphCalculator.calculateLunarPhase(dateTime, latitude, longitude);
         
-        int dayOfYear = dateTime.getDayOfYear();
-        int tithiNumber = ((dayOfYear - 1) % 30) + 1;
+        int tithiNumber = lunarPhase.getTithi();
+        boolean isShuklaPaksha = lunarPhase.isShuklaPaksha();
         
         String[] tithiNames = {
             "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
@@ -68,9 +69,10 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
             "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "अमावस्या"
         };
         
-        boolean isShuklaPaksha = tithiNumber <= 15;
-        double startTime = 6.0; // 6:00 AM
-        double endTime = 6.0; // 6:00 AM next day
+        // Note: Start/End times require complex iterative calculation. 
+        // For now, we return the current status.
+        double startTime = 0.0; 
+        double endTime = 0.0; 
         
         return new PanchangResult.TithiInfo(tithiNumber, tithiNames[tithiNumber - 1], 
                            sanskritNames[tithiNumber - 1], startTime, endTime, isShuklaPaksha);
@@ -91,11 +93,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
     
     @Override
     public NakshatraInfo calculateNakshatra(LocalDateTime dateTime, double latitude, double longitude) {
-        // Simplified Nakshatra calculation
-        // In actual implementation, this would use astronomical calculations
-        
-        int dayOfYear = dateTime.getDayOfYear();
-        int nakshatraNumber = ((dayOfYear - 1) % 27) + 1;
+        // Use Swiss Ephemeris for accurate calculation
+        com.example.purnima.util.SwissEphCalculator.NakshatraInfo swissNakshatra = 
+            com.example.purnima.util.SwissEphCalculator.calculateNakshatra(dateTime, latitude, longitude);
+            
+        int nakshatraNumber = swissNakshatra.getNakshatraNumber();
         
         String[] nakshatraNames = {
             "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu",
@@ -121,8 +123,8 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
             "Saturn", "Mercury"
         };
         
-        double startTime = 6.0; // 6:00 AM
-        double endTime = 6.0; // 6:00 AM next day
+        double startTime = 0.0;
+        double endTime = 0.0;
         
         return new PanchangResult.NakshatraInfo(nakshatraNumber, nakshatraNames[nakshatraNumber - 1],
                                sanskritNames[nakshatraNumber - 1], rulingPlanets[nakshatraNumber - 1],
@@ -131,11 +133,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
     
     @Override
     public YogaInfo calculateYoga(LocalDateTime dateTime, double latitude, double longitude) {
-        // Simplified Yoga calculation
-        // In actual implementation, this would use astronomical calculations
-        
-        int dayOfYear = dateTime.getDayOfYear();
-        int yogaNumber = ((dayOfYear - 1) % 27) + 1;
+        // Use Swiss Ephemeris for accurate calculation
+        com.example.purnima.util.SwissEphCalculator.YogaInfo swissYoga = 
+            com.example.purnima.util.SwissEphCalculator.calculateYoga(dateTime, latitude, longitude);
+            
+        int yogaNumber = swissYoga.getYogaNumber();
         
         String[] yogaNames = {
             "Vishkumbha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarman",
@@ -153,20 +155,37 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
             "इन्द्र", "वैधृति"
         };
         
-        double startTime = 6.0; // 6:00 AM
-        double endTime = 6.0; // 6:00 AM next day
+        double startTime = 0.0;
+        double endTime = 0.0;
         
         return new PanchangResult.YogaInfo(yogaNumber, yogaNames[yogaNumber - 1], sanskritNames[yogaNumber - 1],
-                          startTime, endTime);
+                           startTime, endTime);
     }
     
     @Override
     public KaranaInfo calculateKarana(LocalDateTime dateTime, double latitude, double longitude) {
-        // Simplified Karana calculation
-        // In actual implementation, this would use astronomical calculations
+        // Use Swiss Ephemeris for accurate calculation
+        com.example.purnima.util.SwissEphCalculator.LunarPhase lunarPhase = 
+            com.example.purnima.util.SwissEphCalculator.calculateLunarPhase(dateTime, latitude, longitude);
+            
+        // Calculate Karana from Lunar Phase
+        // 1 Tithi = 12 degrees, 1 Karana = 6 degrees
+        double phase = lunarPhase.getLunarPhase();
+        int karanaIndex = (int) Math.floor(phase / 6.0) + 1;
+        if (karanaIndex > 60) karanaIndex = 60;
         
-        int dayOfYear = dateTime.getDayOfYear();
-        int karanaNumber = ((dayOfYear - 1) % 11) + 1;
+        // Map 1-60 Karana index to 11 Karana names
+        int karanaNumber;
+        if (karanaIndex == 1) karanaNumber = 11; // Kimstughna
+        else if (karanaIndex >= 58) {
+            if (karanaIndex == 58) karanaNumber = 8; // Shakuni
+            else if (karanaIndex == 59) karanaNumber = 9; // Chatushpada
+            else karanaNumber = 10; // Naga
+        } else {
+            // Movable Karanas (2-8) repeat
+            // Sequence starts from Bava (1) at index 2
+            karanaNumber = ((karanaIndex - 2) % 7) + 1;
+        }
         
         String[] karanaNames = {
             "Bava", "Balava", "Kaulava", "Taitila", "Garija",
@@ -180,11 +199,11 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
             "किंस्तुघ्न"
         };
         
-        double startTime = 6.0; // 6:00 AM
-        double endTime = 6.0; // 6:00 AM next day
+        double startTime = 0.0;
+        double endTime = 0.0;
         
         return new PanchangResult.KaranaInfo(karanaNumber, karanaNames[karanaNumber - 1], sanskritNames[karanaNumber - 1],
-                            startTime, endTime);
+                             startTime, endTime);
     }
     
     @Override
