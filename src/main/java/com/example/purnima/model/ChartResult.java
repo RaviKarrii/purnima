@@ -170,16 +170,20 @@ public class ChartResult {
      */
     public static class PlanetaryPosition {
         private final Planet planet;
+        private final String planetName;
         private final Rashi rashi;
+        private final String rashiName;
         private final double degreeInRashi;
         private final int houseNumber;
         private final boolean isRetrograde;
         private final String exaltationStatus;
 
-        public PlanetaryPosition(Planet planet, Rashi rashi, double degreeInRashi, 
+        public PlanetaryPosition(Planet planet, String planetName, Rashi rashi, String rashiName, double degreeInRashi, 
                                int houseNumber, boolean isRetrograde, String exaltationStatus) {
             this.planet = planet;
+            this.planetName = planetName;
             this.rashi = rashi;
+            this.rashiName = rashiName;
             this.degreeInRashi = degreeInRashi;
             this.houseNumber = houseNumber;
             this.isRetrograde = isRetrograde;
@@ -188,7 +192,9 @@ public class ChartResult {
 
         // Getters
         public Planet getPlanet() { return planet; }
+        public String getPlanetName() { return planetName; }
         public Rashi getRashi() { return rashi; }
+        public String getRashiName() { return rashiName; }
         public double getDegreeInRashi() { return degreeInRashi; }
         public int getHouseNumber() { return houseNumber; }
         public boolean isRetrograde() { return isRetrograde; }
@@ -201,13 +207,15 @@ public class ChartResult {
     public static class House {
         private final int houseNumber;
         private final Rashi rashi;
+        private final String rashiName;
         private final double startDegree;
         private final double endDegree;
         private final PlanetaryPosition[] planets;
 
-        public House(int houseNumber, Rashi rashi, double startDegree, double endDegree, PlanetaryPosition[] planets) {
+        public House(int houseNumber, Rashi rashi, String rashiName, double startDegree, double endDegree, PlanetaryPosition[] planets) {
             this.houseNumber = houseNumber;
             this.rashi = rashi;
+            this.rashiName = rashiName;
             this.startDegree = startDegree;
             this.endDegree = endDegree;
             this.planets = planets;
@@ -216,6 +224,7 @@ public class ChartResult {
         // Getters
         public int getHouseNumber() { return houseNumber; }
         public Rashi getRashi() { return rashi; }
+        public String getRashiName() { return rashiName; }
         public double getStartDegree() { return startDegree; }
         public double getEndDegree() { return endDegree; }
         public PlanetaryPosition[] getPlanets() { return planets; }

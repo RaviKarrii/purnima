@@ -176,7 +176,7 @@ public class DefaultChartGenerator implements ChartGenerator {
                                     (i % 4 == 1) ? "Debilitated" : "Neutral";
             
             positions.add(new ChartResult.PlanetaryPosition(
-                planet, rashi, degreeInRashi, houseNumber, isRetrograde, exaltationStatus
+                planet, planet.getEnglishName(), rashi, rashi.getEnglishName(), degreeInRashi, houseNumber, isRetrograde, exaltationStatus
             ));
         }
         
@@ -207,7 +207,7 @@ public class DefaultChartGenerator implements ChartGenerator {
             }
             
             houses[i] = new ChartResult.House(
-                i + 1, rashi, startDegree, endDegree,
+                i + 1, rashi, rashi.getEnglishName(), startDegree, endDegree,
                 housePlanets.toArray(new ChartResult.PlanetaryPosition[0])
             );
         }

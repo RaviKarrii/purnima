@@ -190,8 +190,11 @@ public class AccurateChartGenerator implements ChartGenerator {
                 String exaltationStatus = determineExaltationStatus(planet, swissPos.getLongitude());
                 String localizedStatus = localizeStatus(exaltationStatus, locale);
                 
+                String planetName = messageSource.getMessage(planet.getMessageKey(), null, planet.getEnglishName(), locale);
+                String rashiName = messageSource.getMessage(rashi.getMessageKey(), null, rashi.getEnglishName(), locale);
+                
                 positions.add(new ChartResult.PlanetaryPosition(
-                    planet, rashi, degreeInRashi, houseNumber, swissPos.isRetrograde(), localizedStatus
+                    planet, planetName, rashi, rashiName, degreeInRashi, houseNumber, swissPos.isRetrograde(), localizedStatus
                 ));
                 
             } catch (Exception e) {
@@ -206,6 +209,7 @@ public class AccurateChartGenerator implements ChartGenerator {
     
     private ChartResult.House[] generateAccurateHouses(BirthData birthData, ChartResult.PlanetaryPosition[] planetaryPositions) {
         ChartResult.House[] houses = new ChartResult.House[12];
+        Locale locale = LocaleContextHolder.getLocale();
         
         try {
             // Calculate house cusps using Swiss Ephemeris
@@ -218,6 +222,7 @@ public class AccurateChartGenerator implements ChartGenerator {
             for (int i = 0; i < 12; i++) {
                 double cuspLongitude = houseCusps[i];
                 Rashi rashi = Rashi.getRashiForDegree(cuspLongitude);
+                String rashiName = messageSource.getMessage(rashi.getMessageKey(), null, rashi.getEnglishName(), locale);
                 
                 double startDegree = cuspLongitude;
                 double endDegree = (i < 11) ? houseCusps[i + 1] : houseCusps[0] + 360;
@@ -231,7 +236,7 @@ public class AccurateChartGenerator implements ChartGenerator {
                 }
                 
                 houses[i] = new ChartResult.House(
-                    i + 1, rashi, startDegree, endDegree,
+                    i + 1, rashi, rashiName, startDegree, endDegree,
                     housePlanets.toArray(new ChartResult.PlanetaryPosition[0])
                 );
             }
@@ -396,6 +401,7 @@ public class AccurateChartGenerator implements ChartGenerator {
     }
     
     private ChartResult.PlanetaryPosition generateFallbackPosition(Planet planet, BirthData birthData) {
+        Locale locale = LocaleContextHolder.getLocale();
         // Fallback simplified calculation
         int dayOfYear = birthData.getBirthDateTime().getDayOfYear();
         int hour = birthData.getBirthDateTime().getHour();
@@ -408,13 +414,17 @@ public class AccurateChartGenerator implements ChartGenerator {
         boolean isRetrograde = (planet.getIndex() % 3 == 0);
         String exaltationStatus = "Neutral";
         
+        String planetName = messageSource.getMessage(planet.getMessageKey(), null, planet.getEnglishName(), locale);
+        String rashiName = messageSource.getMessage(rashi.getMessageKey(), null, rashi.getEnglishName(), locale);
+        
         return new ChartResult.PlanetaryPosition(
-            planet, rashi, degreeInRashi, houseNumber, isRetrograde, exaltationStatus
+            planet, planetName, rashi, rashiName, degreeInRashi, houseNumber, isRetrograde, exaltationStatus
         );
     }
     
     private ChartResult.House[] generateFallbackHouses(BirthData birthData, ChartResult.PlanetaryPosition[] planetaryPositions) {
         ChartResult.House[] houses = new ChartResult.House[12];
+        Locale locale = LocaleContextHolder.getLocale();
         
         // Simplified house calculation
         int dayOfYear = birthData.getBirthDateTime().getDayOfYear();
@@ -424,6 +434,7 @@ public class AccurateChartGenerator implements ChartGenerator {
         for (int i = 0; i < 12; i++) {
             int rashiIndex = (ascendantRashiIndex + i) % 12;
             Rashi rashi = Rashi.values()[rashiIndex];
+            String rashiName = messageSource.getMessage(rashi.getMessageKey(), null, rashi.getEnglishName(), locale);
             
             double startDegree = i * 30.0;
             double endDegree = (i + 1) * 30.0;
@@ -436,7 +447,7 @@ public class AccurateChartGenerator implements ChartGenerator {
             }
             
             houses[i] = new ChartResult.House(
-                i + 1, rashi, startDegree, endDegree,
+                i + 1, rashi, rashiName, startDegree, endDegree,
                 housePlanets.toArray(new ChartResult.PlanetaryPosition[0])
             );
         }
@@ -454,14 +465,14 @@ public class AccurateChartGenerator implements ChartGenerator {
         json.append("    \"longitude\": ").append(chartResult.getBirthData().getLongitude()).append(",\n");
         json.append("    \"placeName\": \"").append(chartResult.getBirthData().getPlaceName()).append("\"\n");
         json.append("  },\n");
-        json.append("  \"ascendant\": \"").append(chartResult.getAscendant().getRashi().getEnglishName()).append("\",\n");
+        json.append("  \"ascendant\": \"").append(chartResult.getAscendant().getRashiName()).append("\",\n");
         json.append("  \"planets\": [\n");
         
         for (int i = 0; i < chartResult.getPlanetaryPositions().length; i++) {
             ChartResult.PlanetaryPosition pos = chartResult.getPlanetaryPositions()[i];
             json.append("    {\n");
-            json.append("      \"planet\": \"").append(pos.getPlanet().getEnglishName()).append("\",\n");
-            json.append("      \"rashi\": \"").append(pos.getRashi().getEnglishName()).append("\",\n");
+            json.append("      \"planet\": \"").append(pos.getPlanetName()).append("\",\n");
+            json.append("      \"rashi\": \"").append(pos.getRashiName()).append("\",\n");
             json.append("      \"degree\": ").append(pos.getDegreeInRashi()).append(",\n");
             json.append("      \"house\": ").append(pos.getHouseNumber()).append(",\n");
             json.append("      \"retrograde\": ").append(pos.isRetrograde()).append(",\n");
