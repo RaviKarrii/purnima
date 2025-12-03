@@ -5,21 +5,27 @@ import com.example.purnima.model.BirthData;
 import com.example.purnima.model.DasaResult;
 import com.example.purnima.util.SwissEphCalculator;
 import com.example.purnima.util.SwissEphCalculator.NakshatraInfo;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Implementation of Vimshottari Dasa system (120 years cycle).
  */
 public class VimshottariDasaCalculator implements DasaCalculator {
 
+    private final MessageSource messageSource;
+
     // Planet order in Vimshottari Dasa: Ketu, Venus, Sun, Moon, Mars, Rahu, Jupiter, Saturn, Mercury
-    private static final String[] DASA_PLANETS = {
-        "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"
+    // Keys for localization
+    private static final String[] DASA_PLANET_KEYS = {
+        "planet.ketu", "planet.venus", "planet.sun", "planet.moon", "planet.mars", "planet.rahu", "planet.jupiter", "planet.saturn", "planet.mercury"
     };
 
     // Duration of each Mahadasa in years
@@ -29,6 +35,33 @@ public class VimshottariDasaCalculator implements DasaCalculator {
     
     // Total cycle duration
     private static final int TOTAL_DASA_YEARS = 120;
+
+    public VimshottariDasaCalculator(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
+    // Default constructor for backward compatibility or testing without i18n
+    public VimshottariDasaCalculator() {
+        this.messageSource = null;
+    }
+
+    private String getLocalizedPlanetName(int index) {
+        if (messageSource == null) {
+            // Fallback to English names if no MessageSource
+            String[] englishNames = {"Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"};
+            return englishNames[index];
+        }
+        Locale locale = LocaleContextHolder.getLocale();
+        return messageSource.getMessage(DASA_PLANET_KEYS[index], null, locale);
+    }
+    
+    // Helper to get index from localized or English name (reverse lookup is tricky with i18n)
+    // Actually, we should store the internal key or index in DasaResult, but DasaResult takes a String planet name.
+    // For calculation logic, we need to know the planet index.
+    // Issue: If we store localized name in DasaResult, we can't easily get the index back for sub-period generation if we rely on name.
+    // Solution: We should pass the index or key to generation methods, not rely on parsing the name from DasaResult.
+    // Or, we can store the key in DasaResult? DasaResult is a simple model.
+    // Let's modify generation methods to take planet index.
 
     @Override
     public List<DasaResult> calculateMahadasas(BirthData birthData) {
@@ -42,21 +75,10 @@ public class VimshottariDasaCalculator implements DasaCalculator {
         );
         
         // 2. Determine ruling planet and starting Dasa
-        // Nakshatras 1-9 start with Ketu, 10-18 with Ketu, 19-27 with Ketu? No.
-        // The sequence repeats every 9 Nakshatras.
-        // 1 (Ashwini) -> Ketu
-        // 2 (Bharani) -> Venus
-        // ...
-        // So (Nakshatra - 1) % 9 gives the index in DASA_PLANETS
-        
         int nakshatraIndex = nakshatraInfo.getNakshatraNumber() - 1;
         int planetIndex = nakshatraIndex % 9;
         
         // 3. Calculate balance of Dasa
-        // Degree in Nakshatra (0 to 13.3333)
-        // Fraction elapsed = degreeInNakshatra / 13.3333
-        // Fraction remaining = 1 - Fraction elapsed
-        
         double degreeInNakshatra = nakshatraInfo.getDegreeInNakshatra();
         double totalNakshatraDuration = 13.333333333;
         double fractionElapsed = degreeInNakshatra / totalNakshatraDuration;
@@ -70,22 +92,13 @@ public class VimshottariDasaCalculator implements DasaCalculator {
         
         // First Mahadasa (partial)
         LocalDateTime firstEndDate = addYears(currentStartDate, yearsRemaining);
-        DasaResult firstDasa = new DasaResult(DASA_PLANETS[planetIndex], currentStartDate, firstEndDate, 1);
-        // Generate Antardasas for the first Mahadasa
-        // Note: For the first Mahadasa, we need to find the correct starting Antardasa based on the balance
-        // But typically, Dasa listings show the full structure. 
-        // However, the "balance" means we are starting in the middle of a Mahadasa.
-        // For simplicity in this list, we'll show the actual start/end dates from birth.
-        // A more detailed view would show the Antardasa running at birth.
-        generateAntardasas(firstDasa, DASA_YEARS[planetIndex]);
+        DasaResult firstDasa = new DasaResult(getLocalizedPlanetName(planetIndex), currentStartDate, firstEndDate, 1);
+        generateAntardasas(firstDasa, planetIndex, DASA_YEARS[planetIndex]);
         mahadasas.add(firstDasa);
         
         currentStartDate = firstEndDate;
         
         // Subsequent Mahadasas
-        // We generate for 120 years from birth, or maybe just one full cycle?
-        // Usually people want to see up to 100-120 years of life.
-        
         int currentPlanetIndex = (planetIndex + 1) % 9;
         LocalDateTime birthDate = birthData.getBirthDateTime();
         
@@ -93,8 +106,8 @@ public class VimshottariDasaCalculator implements DasaCalculator {
             int duration = DASA_YEARS[currentPlanetIndex];
             LocalDateTime endDate = addYears(currentStartDate, (double) duration);
             
-            DasaResult dasa = new DasaResult(DASA_PLANETS[currentPlanetIndex], currentStartDate, endDate, 1);
-            generateAntardasas(dasa, duration);
+            DasaResult dasa = new DasaResult(getLocalizedPlanetName(currentPlanetIndex), currentStartDate, endDate, 1);
+            generateAntardasas(dasa, currentPlanetIndex, duration);
             mahadasas.add(dasa);
             
             currentStartDate = endDate;
@@ -107,44 +120,55 @@ public class VimshottariDasaCalculator implements DasaCalculator {
     @Override
     public DasaResult getCurrentDasa(BirthData birthData) {
         List<DasaResult> mahadasas = calculateMahadasas(birthData);
-        LocalDateTime now = LocalDateTime.now(); // Or use a passed time if needed, but interface says getCurrentDasa(BirthData) implies "now" relative to system time? 
-        // Actually, usually "current" means for a specific date. The interface signature I defined is getCurrentDasa(BirthData).
-        // Let's assume "now".
+        LocalDateTime now = LocalDateTime.now(); 
         
         for (DasaResult md : mahadasas) {
             if (isDateWithin(now, md.getStartDate(), md.getEndDate())) {
-                // Found Mahadasa, now find Antardasa
                 for (DasaResult ad : md.getSubPeriods()) {
                     if (isDateWithin(now, ad.getStartDate(), ad.getEndDate())) {
-                        // Found Antardasa, now find Pratyantardasa
-                        // We need to generate Pratyantardasas for this Antardasa on the fly if not already
-                        if (ad.getSubPeriods().isEmpty()) {
-                            // Find the planet index for this Antardasa
-                            int mdPlanetIndex = getPlanetIndex(md.getPlanet());
-                            int adPlanetIndex = getPlanetIndex(ad.getPlanet());
-                            // Duration of Antardasa in months = DasaYears(MD) * DasaYears(AD) / 10
-                            // Actually, let's just reuse a generation method
-                            generatePratyantardasas(ad, DASA_YEARS[mdPlanetIndex], DASA_YEARS[adPlanetIndex]);
-                        }
+                        // Check if sub-periods exist (they should be generated by calculateMahadasas -> generateAntardasas)
+                        // But Pratyantardasas are NOT generated by default in calculateMahadasas to save space?
+                        // Wait, my previous implementation of generateAntardasas did NOT generate PDs.
+                        // So ad.getSubPeriods() is empty.
                         
-                        for (DasaResult pd : ad.getSubPeriods()) {
-                            if (isDateWithin(now, pd.getStartDate(), pd.getEndDate())) {
-                                return pd; // Return the deepest level found
+                        // We need to find the planet indices to generate PDs.
+                        // Since DasaResult only has the localized name, we have a problem if we don't know the index.
+                        // BUT, we can iterate to find the index that matches the localized name?
+                        // Or better, since we are inside the loop, we can't easily know the index of 'md' and 'ad' without looking them up.
+                        
+                        // Let's implement a lookup helper.
+                        int mdPlanetIndex = getPlanetIndexFromLocalizedName(md.getPlanet());
+                        int adPlanetIndex = getPlanetIndexFromLocalizedName(ad.getPlanet());
+                        
+                        if (mdPlanetIndex != -1 && adPlanetIndex != -1) {
+                             generatePratyantardasas(ad, mdPlanetIndex, adPlanetIndex);
+                             
+                             for (DasaResult pd : ad.getSubPeriods()) {
+                                if (isDateWithin(now, pd.getStartDate(), pd.getEndDate())) {
+                                    return pd;
+                                }
                             }
                         }
-                        return ad; // Fallback
+                        return ad;
                     }
                 }
-                return md; // Fallback
+                return md;
             }
         }
         return null;
     }
     
+    private int getPlanetIndexFromLocalizedName(String name) {
+        for (int i = 0; i < 9; i++) {
+            if (getLocalizedPlanetName(i).equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
     // Helper to add fractional years
     private LocalDateTime addYears(LocalDateTime date, double years) {
-        long days = (long) (years * 365.2425); // Using Gregorian average year
-        // Or more precisely:
         long fullYears = (long) years;
         double fraction = years - fullYears;
         long extraDays = (long) (fraction * 365.2425);
@@ -156,54 +180,26 @@ public class VimshottariDasaCalculator implements DasaCalculator {
         return (target.isEqual(start) || target.isAfter(start)) && target.isBefore(end);
     }
     
-    private int getPlanetIndex(String planet) {
-        for (int i = 0; i < DASA_PLANETS.length; i++) {
-            if (DASA_PLANETS[i].equals(planet)) return i;
-        }
-        return -1;
-    }
-    
-    private void generateAntardasas(DasaResult mahadasa, int mahadasaYears) {
+    private void generateAntardasas(DasaResult mahadasa, int mahadasaPlanetIndex, int mahadasaYears) {
         // Antardasa sequence starts from the Mahadasa lord itself
-        int startPlanetIndex = getPlanetIndex(mahadasa.getPlanet());
-        LocalDateTime currentStart = mahadasa.getStartDate();
-        
-        // However, if this is the first Mahadasa of life (with balance), 
-        // the start date of the Mahadasa is birth date, but the Antardasa cycle 
-        // might be starting in the middle.
-        // This is complex. The standard way is:
-        // Calculate full dates for all Antardasas as if the Mahadasa started fully.
-        // Then clip them to the birth date.
-        
-        // Let's refine the logic for the first Mahadasa.
-        // We know the END date of the Mahadasa.
-        // We can work backwards or calculate the full theoretical start date.
+        int startPlanetIndex = mahadasaPlanetIndex;
         
         // Theoretical start of this Mahadasa = EndDate - MahadasaYears
         LocalDateTime theoreticalStart = addYears(mahadasa.getEndDate(), -mahadasaYears);
-        
         LocalDateTime adStart = theoreticalStart;
         
         for (int i = 0; i < 9; i++) {
             int planetIdx = (startPlanetIndex + i) % 9;
             int adYears = DASA_YEARS[planetIdx];
             
-            // Formula: Antardasa months = MahadasaYears * AntardasaYears / 10
-            // Example: Sun (6) * Sun (6) / 10 = 3.6 months
-            
             double months = (double) mahadasaYears * adYears / 10.0;
-            // Convert months to years for addYears helper? 
-            // Or just add months? 3.6 months is tricky with standard plusMonths.
-            // Better to use fraction of years. 
-            // months / 12 = years
             double adDurationYears = months / 12.0;
             
             LocalDateTime adEnd = addYears(adStart, adDurationYears);
             
-            // Only add if it overlaps with the actual Mahadasa period (Birth to End)
             if (adEnd.isAfter(mahadasa.getStartDate())) {
                 LocalDateTime effectiveStart = adStart.isBefore(mahadasa.getStartDate()) ? mahadasa.getStartDate() : adStart;
-                DasaResult ad = new DasaResult(DASA_PLANETS[planetIdx], effectiveStart, adEnd, 2);
+                DasaResult ad = new DasaResult(getLocalizedPlanetName(planetIdx), effectiveStart, adEnd, 2);
                 mahadasa.addSubPeriod(ad);
             }
             
@@ -211,26 +207,10 @@ public class VimshottariDasaCalculator implements DasaCalculator {
         }
     }
 
-    private void generatePratyantardasas(DasaResult antardasa, int mahadasaYears, int antardasaYears) {
-        int startPlanetIndex = getPlanetIndex(antardasa.getPlanet());
-        
-        // Similar logic for theoretical start
-        // PD duration = MD * AD * PD / 1000 (roughly? No, let's check formula)
-        // Standard: MD years * AD years * PD years / 40 / 3 = days? No.
-        // Formula: 
-        // AD = MD * AD / 120 of total cycle? No.
-        // Simple rule: Proportion is always PlanetYears / 120.
-        // So AD duration = MD_Duration * (AD_Years / 120)
-        // PD duration = AD_Duration * (PD_Years / 120)
-        
-        // Let's verify AD duration:
-        // MD_Duration (years) = MD_Years
-        // AD_Duration = MD_Years * (AD_Years / 120) = MD_Years * AD_Years / 120
-        // My previous formula: MD * AD / 10 months.
-        // MD * AD / 10 months = MD * AD / 120 years. (Since 120 months = 10 years? No. 10 * 12 = 120).
-        // Yes, MD * AD / 120 years = (MD * AD / 10) / 12 years = MD * AD / 10 months. Correct.
-        
-        // So PD Duration = AD_Duration_Years * (PD_Years / 120)
+    private void generatePratyantardasas(DasaResult antardasa, int mahadasaPlanetIndex, int antardasaPlanetIndex) {
+        int startPlanetIndex = antardasaPlanetIndex;
+        int mahadasaYears = DASA_YEARS[mahadasaPlanetIndex];
+        int antardasaYears = DASA_YEARS[antardasaPlanetIndex];
         
         double adDurationYears = (double) mahadasaYears * antardasaYears / 120.0;
         LocalDateTime theoreticalStart = addYears(antardasa.getEndDate(), -adDurationYears);
@@ -246,7 +226,7 @@ public class VimshottariDasaCalculator implements DasaCalculator {
             
              if (pdEnd.isAfter(antardasa.getStartDate())) {
                 LocalDateTime effectiveStart = pdStart.isBefore(antardasa.getStartDate()) ? antardasa.getStartDate() : pdStart;
-                DasaResult pd = new DasaResult(DASA_PLANETS[planetIdx], effectiveStart, pdEnd, 3);
+                DasaResult pd = new DasaResult(getLocalizedPlanetName(planetIdx), effectiveStart, pdEnd, 3);
                 antardasa.addSubPeriod(pd);
             }
             

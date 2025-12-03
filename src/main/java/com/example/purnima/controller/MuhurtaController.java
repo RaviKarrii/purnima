@@ -3,6 +3,8 @@ package com.example.purnima.controller;
 import com.example.purnima.api.MuhurtaCalculator;
 import com.example.purnima.model.MuhurtaResult;
 import com.example.purnima.service.DefaultMuhurtaCalculator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -14,8 +16,9 @@ public class MuhurtaController {
 
     private final MuhurtaCalculator muhurtaCalculator;
 
-    public MuhurtaController() {
-        this.muhurtaCalculator = new DefaultMuhurtaCalculator();
+    @Autowired
+    public MuhurtaController(MessageSource messageSource) {
+        this.muhurtaCalculator = new DefaultMuhurtaCalculator(messageSource);
     }
 
     @GetMapping("/calculate")

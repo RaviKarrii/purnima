@@ -7,6 +7,8 @@ import com.example.purnima.model.*;
 import com.example.purnima.service.DefaultAsthakootCalculator;
 import com.example.purnima.service.DefaultPanchangCalculator;
 import com.example.purnima.service.AccurateChartGenerator;
+import com.example.purnima.service.VimshottariDasaCalculator;
+import com.example.purnima.service.DefaultMuhurtaCalculator;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 import java.time.LocalDate;
@@ -24,6 +26,8 @@ public class PurnimaAstrology {
     private final AsthakootCalculator asthakootCalculator;
     private final PanchangCalculator panchangCalculator;
     private final ChartGenerator chartGenerator;
+    private final com.example.purnima.api.DasaCalculator dasaCalculator;
+    private final com.example.purnima.api.MuhurtaCalculator muhurtaCalculator;
     private final ReloadableResourceBundleMessageSource messageSource;
     
     /**
@@ -37,6 +41,8 @@ public class PurnimaAstrology {
         this.asthakootCalculator = new DefaultAsthakootCalculator();
         this.panchangCalculator = new DefaultPanchangCalculator(messageSource);
         this.chartGenerator = new AccurateChartGenerator(messageSource); // Now uses Swiss Ephemeris
+        this.dasaCalculator = new VimshottariDasaCalculator(messageSource);
+        this.muhurtaCalculator = new DefaultMuhurtaCalculator(messageSource);
     }
     
     /**
@@ -52,6 +58,11 @@ public class PurnimaAstrology {
         this.asthakootCalculator = asthakootCalculator;
         this.panchangCalculator = panchangCalculator;
         this.chartGenerator = chartGenerator;
+        // For custom constructors, we might default to standard Dasa/Muhurta or leave them null?
+        // Better to initialize them with defaults if not provided, or add them to constructor.
+        // For backward compatibility, we initialize defaults.
+        this.dasaCalculator = new VimshottariDasaCalculator(messageSource);
+        this.muhurtaCalculator = new DefaultMuhurtaCalculator(messageSource);
     }
     
     /**
@@ -70,14 +81,11 @@ public class PurnimaAstrology {
         if (useAccurateCalculations) {
             this.chartGenerator = new AccurateChartGenerator(messageSource); // Swiss Ephemeris
         } else {
-            // DefaultChartGenerator also needs MessageSource if updated, but assuming it's legacy/simplified
-            // If DefaultChartGenerator wasn't updated to take MessageSource, this line might fail if I changed it.
-            // But I only changed AccurateChartGenerator and DefaultPanchangCalculator.
-            // Let's assume DefaultChartGenerator is untouched or I need to check it.
-            // Wait, if I changed DefaultPanchangCalculator, I need to pass messageSource to it (done above).
-            // For DefaultChartGenerator, I haven't touched it in this session.
             this.chartGenerator = new com.example.purnima.service.DefaultChartGenerator(); // Simplified
         }
+        
+        this.dasaCalculator = new VimshottariDasaCalculator(messageSource);
+        this.muhurtaCalculator = new DefaultMuhurtaCalculator(messageSource);
     }
     
     // ==================== ASTHAKOOT METHODS ====================
@@ -333,8 +341,6 @@ public class PurnimaAstrology {
     
     // ==================== DASA METHODS ====================
     
-    private final com.example.purnima.api.DasaCalculator dasaCalculator = new com.example.purnima.service.VimshottariDasaCalculator();
-    
     /**
      * Calculate Vimshottari Dasa Mahadasas.
      * 
@@ -357,8 +363,6 @@ public class PurnimaAstrology {
     
     // ==================== MUHURTA METHODS ====================
     
-    private final com.example.purnima.api.MuhurtaCalculator muhurtaCalculator = new com.example.purnima.service.DefaultMuhurtaCalculator();
-    
     /**
      * Calculate Muhurta details (Choghadiya, Hora, etc.).
      * 
@@ -371,6 +375,4 @@ public class PurnimaAstrology {
     public com.example.purnima.model.MuhurtaResult calculateMuhurta(LocalDate date, double latitude, double longitude, ZoneId zoneId) {
         return muhurtaCalculator.calculateMuhurta(date, latitude, longitude, zoneId);
     }
-    
-
-} 
+}

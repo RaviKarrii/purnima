@@ -4,6 +4,8 @@ import com.example.purnima.api.DasaCalculator;
 import com.example.purnima.model.BirthData;
 import com.example.purnima.model.DasaResult;
 import com.example.purnima.service.VimshottariDasaCalculator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -16,8 +18,9 @@ public class DasaController {
 
     private final DasaCalculator dasaCalculator;
 
-    public DasaController() {
-        this.dasaCalculator = new VimshottariDasaCalculator();
+    @Autowired
+    public DasaController(MessageSource messageSource) {
+        this.dasaCalculator = new VimshottariDasaCalculator(messageSource);
     }
 
     @GetMapping("/vimshottari")
