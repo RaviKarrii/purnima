@@ -1,0 +1,429 @@
+openapi: 3.0.0
+info:
+  title: Purnima Vedic Astrology API
+  description: API for Vedic Astrology calculations including Panchang, Birth Charts, Dasa, and Muhurta.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+paths:
+  /api/panchang:
+    get:
+      summary: Get Panchang details
+      description: Calculates Tithi, Vara, Nakshatra, Yoga, and Karana for a specific date and location.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date in YYYY-MM-DD format
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Latitude of the location
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Longitude of the location
+        - name: placeName
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Name of the place
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Timezone ID (e.g., "Asia/Kolkata"). Defaults to system timezone if not provided.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanchangResult'
+
+  /api/chart:
+    get:
+      summary: Get Birth Chart
+      description: Generates a Vedic birth chart with planetary positions and house details.
+      parameters:
+        - name: birthTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Birth date and time in ISO-8601 format (YYYY-MM-DDTHH:mm:ss)
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: placeName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResult'
+
+  /api/compatibility:
+    post:
+      summary: Check Compatibility (Asthakoot)
+      description: Calculates 8-fold compatibility (Asthakoot) between two birth charts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompatibilityRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsthakootResult'
+
+  /api/dasa/vimshottari:
+    get:
+      summary: Get Vimshottari Dasa
+      description: Calculates the Vimshottari Dasa periods (Mahadasa, Antardasa, Pratyantardasa).
+      parameters:
+        - name: birthTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: placeName
+          in: query
+          required: false
+          schema:
+            type: string
+            default: Unknown
+        - name: zoneId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DasaResult'
+
+  /api/dasa/current:
+    get:
+      summary: Get Current Dasa
+      description: Determines the currently active Dasa period hierarchy.
+      parameters:
+        - name: birthTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: placeName
+          in: query
+          required: false
+          schema:
+            type: string
+            default: Unknown
+        - name: zoneId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DasaResult'
+
+  /api/muhurta/calculate:
+    get:
+      summary: Get Muhurta Details
+      description: Calculates Choghadiya, Hora, and inauspicious times for a given date.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: zoneId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MuhurtaResult'
+
+components:
+  schemas:
+    PanchangResult:
+      type: object
+      properties:
+        tithi:
+          $ref: '#/components/schemas/PanchangElement'
+        vara:
+          type: string
+        nakshatra:
+          $ref: '#/components/schemas/PanchangElement'
+        yoga:
+          $ref: '#/components/schemas/PanchangElement'
+        karana:
+          $ref: '#/components/schemas/PanchangElement'
+        sunrise:
+          type: string
+        sunset:
+          type: string
+        moonrise:
+          type: string
+        moonset:
+          type: string
+
+    PanchangElement:
+      type: object
+      properties:
+        name:
+          type: string
+        number:
+          type: integer
+        endTime:
+          type: string
+          description: End time in HH:mm format
+
+    ChartResult:
+      type: object
+      properties:
+        ascendant:
+          type: string
+        planets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PlanetInfo'
+        houses:
+          type: object
+          additionalProperties:
+            type: string
+
+    PlanetInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        longitude:
+          type: number
+          format: double
+        rashi:
+          type: string
+        nakshatra:
+          type: string
+        retrograde:
+          type: boolean
+        house:
+          type: integer
+
+    CompatibilityRequest:
+      type: object
+      properties:
+        maleBirthData:
+          $ref: '#/components/schemas/BirthData'
+        femaleBirthData:
+          $ref: '#/components/schemas/BirthData'
+
+    BirthData:
+      type: object
+      properties:
+        birthDateTime:
+          type: string
+          format: date-time
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        placeName:
+          type: string
+        zoneId:
+          type: string
+
+    AsthakootResult:
+      type: object
+      properties:
+        totalPoints:
+          type: number
+          format: double
+        areas:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/KootaResult'
+
+    KootaResult:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: number
+          format: double
+        maxScore:
+          type: number
+          format: double
+        description:
+          type: string
+
+    DasaResult:
+      type: object
+      properties:
+        planet:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        level:
+          type: integer
+        subPeriods:
+          type: array
+          items:
+            $ref: '#/components/schemas/DasaResult'
+
+    MuhurtaResult:
+      type: object
+      properties:
+        dayChoghadiya:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choghadiya'
+        nightChoghadiya:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choghadiya'
+        dayHora:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hora'
+        nightHora:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hora'
+        rahuKalam:
+          $ref: '#/components/schemas/TimeSpan'
+        yamagandam:
+          $ref: '#/components/schemas/TimeSpan'
+        gulikaKalam:
+          $ref: '#/components/schemas/TimeSpan'
+
+    Choghadiya:
+      type: object
+      properties:
+        name:
+          type: string
+        nature:
+          type: string
+          enum: [GOOD, BAD, NEUTRAL]
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    Hora:
+      type: object
+      properties:
+        planet:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    TimeSpan:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time

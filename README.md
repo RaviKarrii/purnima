@@ -1,6 +1,6 @@
 # Purnima Vedic Astrology Library
 
-A comprehensive Vedic Astrology library for Java that provides asthakoot (eight-fold compatibility), panchang (five elements), and chart generation capabilities using **accurate Swiss Ephemeris calculations** for precise planetary positions. This library is designed to be consumed by anyone who needs precise Vedic astrology calculations in their applications.
+A comprehensive Vedic Astrology library for Java that provides asthakoot (eight-fold compatibility), panchang (five elements), chart generation, dasa (planetary periods), and muhurta (auspicious timings) capabilities using **accurate Swiss Ephemeris calculations** for precise planetary positions. This library is designed to be consumed by anyone who needs precise Vedic astrology calculations in their applications.
 
 ## 🌟 Key Features
 
@@ -16,6 +16,8 @@ A comprehensive Vedic Astrology library for Java that provides asthakoot (eight-
 - **Asthakoot Calculator**: Eight-fold compatibility analysis for marriage matching.
 - **Panchang Calculator**: Five elements (Tithi, Vara, Nakshatra, Yoga, Karana) calculations with accurate end times.
 - **Chart Generator**: Birth charts, compatibility charts, transit charts, and more.
+- **Dasa Calculator**: Vimshottari Dasa calculations (Mahadasa, Antardasa, Pratyantardasa).
+- **Muhurta Calculator**: Choghadiya, Hora, Rahu Kalam, Yamagandam, Gulika Kalam.
 - **Multiple Output Formats**: Text, JSON, XML, HTML, and CSV formats.
 - **Internationalization (i18n)**: Support for multiple languages.
 
@@ -54,7 +56,17 @@ The library supports localized output for astrological terms (Planets, Rashis, P
 - Horoscope charts (daily, weekly, monthly, yearly).
 - Divisional charts (Vargas).
 - Planetary position charts.
-- Dasha charts (Vimshottari).
+
+### ⏳ Dasa (Planetary Periods)
+- **Vimshottari Dasa**: 120-year cycle based on Moon's Nakshatra.
+- **Mahadasa**: Major planetary periods.
+- **Antardasa**: Sub-periods.
+- **Pratyantardasa**: Sub-sub-periods.
+
+### ⏰ Muhurta (Auspicious Timings)
+- **Choghadiya**: Day and Night Choghadiya (Good/Bad/Neutral periods).
+- **Hora**: Planetary hours.
+- **Inauspicious Times**: Rahu Kalam, Yamagandam, Gulika Kalam.
 
 ## Project Structure
 
@@ -66,10 +78,11 @@ purnima/
 │   ├── main/
 │   │   ├── java/
 │   │   │   └── com/example/purnima/
-│   │   │       ├── PurnimaAstrology.java     # Main entry point
+│   │   │       ├── PurnimaAstrology.java     # Facade (Library usage)
 │   │   │       ├── api/                      # Core interfaces
 │   │   │       ├── model/                    # Data models
 │   │   │       ├── service/                  # Implementations (Accurate & Default)
+│   │   │       ├── controller/               # REST Controllers
 │   │   │       └── util/                     # Utilities (SwissEph, TimeUtil)
 │   │   └── resources/
 │   │       ├── messages.properties           # English translations
@@ -90,7 +103,7 @@ purnima/
 
 The library includes the following dependencies:
 - **Swiss Ephemeris (swisseph)**: For high-precision astronomical calculations.
-- **Spring Boot**: For dependency injection and i18n support.
+- **Spring Boot**: For dependency injection, REST API, and i18n support.
 - **ThreeTen Extra**: Advanced date/time handling.
 - **Jackson**: JSON processing.
 - **SLF4J**: Logging framework.
@@ -119,81 +132,72 @@ docker build -t purnima-astrology .
 
 **Run the Docker Container:**
 ```bash
-docker run -it purnima-astrology
+docker run -p 8080:8080 purnima-astrology
 ```
 
-### 3. Basic Usage (Java)
+### 3. API Usage (REST)
+
+The application exposes a REST API for all astrological calculations.
+
+#### Endpoints
+
+#### 1. Get Panchang
+Calculate Tithi, Vara, Nakshatra, Yoga, Karana.
+- **Method**: `GET /api/panchang`
+- **Parameters**: `date`, `latitude`, `longitude`, `placeName`, `timezone` (optional)
+- **Output**: JSON with Panchang elements and end times.
+
+**1. Get Panchang**
+- **URL**: `GET /api/panchang`
+- **Parameters**: `date`, `latitude`, `longitude`, `placeName`, `timezone`
+
+**2. Get Birth Chart**
+- **URL**: `GET /api/chart`
+- **Parameters**: `birthTime`, `latitude`, `longitude`, `placeName`
+
+**3. Get Vimshottari Dasa**
+- **URL**: `GET /api/dasa/vimshottari`
+- **Parameters**: `birthTime`, `latitude`, `longitude`, `placeName`, `zoneId`
+- **Example**: `GET /api/dasa/vimshottari?birthTime=1990-05-15T14:30:00&latitude=19.076&longitude=72.877&placeName=Mumbai`
+
+**4. Get Current Dasa**
+- **URL**: `GET /api/dasa/current`
+- **Parameters**: `birthTime`, `latitude`, `longitude`, `placeName`, `zoneId`
+
+**5. Get Muhurta**
+- **URL**: `GET /api/muhurta/calculate`
+- **Parameters**: `date`, `latitude`, `longitude`, `zoneId`
+- **Example**: `GET /api/muhurta/calculate?date=2024-01-15&latitude=19.076&longitude=72.877`
+
+### 4. Library Usage (Java)
+
+You can also use the library directly in your Java code.
 
 ```java
 import com.example.purnima.PurnimaAstrology;
 import com.example.purnima.model.BirthData;
+import com.example.purnima.model.DasaResult;
+import com.example.purnima.model.MuhurtaResult;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
 
-// Create the main astrology calculator (uses accurate Swiss Ephemeris calculations by default)
-PurnimaAstrology astrology = new PurnimaAstrology();
+// Create the main astrology calculator
+PurnimaAstrology astrology = new PurnimaAstrology(true);
 
-// Create birth data
+// 1. Dasa Calculation
 BirthData birthData = PurnimaAstrology.createBirthData(
-    LocalDateTime.of(1990, 5, 15, 14, 30), // Date and time
-    19.0760, 72.8777, "Mumbai"             // Latitude, longitude, place
+    LocalDateTime.of(1990, 5, 15, 14, 30),
+    19.0760, 72.8777, "Mumbai"
 );
+List<DasaResult> dasas = astrology.calculateVimshottariDasa(birthData);
 
-// Generate birth chart with accurate planetary positions
-String chartSummary = astrology.getBirthChartSummary(birthData);
-System.out.println(chartSummary);
-```
-
-### 4. Command Line Usage
-
-You can run the JAR file directly to perform calculations.
-
-```bash
-# Calculate Panchang (optional timezone)
-java -jar target/purnima-1.0.0-jar-with-dependencies.jar panchang 2024-01-15 19.0760 72.8777 Mumbai [Asia/Kolkata]
-
-# Generate Birth Chart
-java -jar target/purnima-1.0.0-jar-with-dependencies.jar chart 1990-05-15T14:30:00 19.0760 72.8777 Mumbai
-
-# Generate Chart in JSON format
-java -jar target/purnima-1.0.0-jar-with-dependencies.jar json 1990-05-15T14:30:00 19.0760 72.8777 Mumbai
-
-# Generate Chart in HTML format
-java -jar target/purnima-1.0.0-jar-with-dependencies.jar html 1990-05-15T14:30:00 19.0760 72.8777 Mumbai
-```
-
-## API Documentation
-
-The library exposes a REST-like API structure (though currently implemented as a library, it's structured for easy API adaptation).
-
-### Endpoints
-
-#### 1. Get Panchang
-Calculate Tithi, Vara, Nakshatra, Yoga, Karana.
-- **Method**: `GET /panchang` (Conceptual)
-- **Parameters**: `date`, `latitude`, `longitude`, `placeName`, `timezone` (optional)
-- **Output**: JSON with Panchang elements and end times.
-
-#### 2. Get Birth Chart
-Generate a Vedic birth chart.
-- **Method**: `GET /chart` (Conceptual)
-- **Parameters**: `birthTime`, `latitude`, `longitude`, `placeName`
-- **Output**: JSON with planetary positions, ascendant, and house details.
-
-#### 3. Check Compatibility
-Calculate Asthakoot compatibility.
-- **Method**: `POST /compatibility` (Conceptual)
-- **Parameters**: Male and Female birth data.
-- **Output**: JSON with compatibility score and breakdown.
-
-### Internationalization Usage
-
-To get localized output, you can set the `Locale` in your Java code or pass the `Accept-Language` header if wrapping this in a REST API.
-
-**Example (Java):**
-```java
-LocaleContextHolder.setLocale(new Locale("hi")); // Set to Hindi
-String chartJson = astrology.generateChartInFormat(birthData, ChartFormat.JSON);
-// Output will contain Hindi names for Planets and Rashis
+// 2. Muhurta Calculation
+MuhurtaResult muhurta = astrology.calculateMuhurta(
+    LocalDate.of(2024, 1, 15),
+    19.0760, 72.8777, ZoneId.of("Asia/Kolkata")
+);
 ```
 
 ## Implementation Details

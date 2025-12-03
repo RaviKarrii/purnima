@@ -331,124 +331,46 @@ public class PurnimaAstrology {
                "- Accurate astronomical calculations via Swiss Ephemeris";
     }
     
-    // ==================== MAIN METHOD FOR DEMO ====================
+    // ==================== DASA METHODS ====================
+    
+    private final com.example.purnima.api.DasaCalculator dasaCalculator = new com.example.purnima.service.VimshottariDasaCalculator();
     
     /**
-     * Main method demonstrating basic usage of the library.
+     * Calculate Vimshottari Dasa Mahadasas.
+     * 
+     * @param birthData Birth data
+     * @return List of Mahadasas
      */
-    public static void main(String[] args) {
-        System.out.println("=== " + getVersion() + " ===");
-        System.out.println(getDescription());
-        System.out.println();
-        
-        if (args.length == 0) {
-            System.out.println("Usage Examples:");
-            System.out.println("1. Calculate Panchang: java -jar purnima.jar panchang 2024-01-15 19.0760 72.8777 Mumbai");
-            System.out.println("2. Generate Birth Chart: java -jar purnima.jar chart 1990-05-15T14:30:00 19.0760 72.8777 Mumbai");
-            System.out.println("3. Generate Chart in JSON: java -jar purnima.jar json 1990-05-15T14:30:00 19.0760 72.8777 Mumbai");
-            System.out.println("4. Calculate Compatibility: java -jar purnima.jar compatibility");
-            System.out.println();
-            System.out.println("For detailed usage, please refer to the documentation.");
-            return;
-        }
-        
-        PurnimaAstrology astrology = new PurnimaAstrology(true); // Use accurate calculations
-        
-        try {
-            String command = args[0].toLowerCase();
-            
-            switch (command) {
-                case "panchang":
-                    if (args.length >= 5) {
-                        LocalDate date = LocalDate.parse(args[1]);
-                        double lat = Double.parseDouble(args[2]);
-                        double lon = Double.parseDouble(args[3]);
-                        String place = args[4];
-                        
-                        System.out.println("Calculating Panchang for " + date + " at " + place + "...");
-                        String panchang;
-                        if (args.length >= 6) {
-                            String zoneIdStr = args[5];
-                            try {
-                                ZoneId zoneId = ZoneId.of(zoneIdStr);
-                                System.out.println("Using TimeZone: " + zoneId);
-                                panchang = astrology.getPanchangSummary(date, lat, lon, place, zoneId);
-                            } catch (Exception e) {
-                                System.out.println("Invalid TimeZone: " + zoneIdStr + ". Using system default.");
-                                panchang = astrology.getPanchangSummary(date, lat, lon, place);
-                            }
-                        } else {
-                            panchang = astrology.getPanchangSummary(date, lat, lon, place);
-                        }
-                        System.out.println(panchang);
-                    } else {
-                        System.out.println("Usage: panchang <date> <latitude> <longitude> <place> [timezone]");
-                    }
-                    break;
-                    
-                case "chart":
-                    if (args.length >= 5) {
-                        LocalDateTime birthTime = LocalDateTime.parse(args[1]);
-                        double lat = Double.parseDouble(args[2]);
-                        double lon = Double.parseDouble(args[3]);
-                        String place = args[4];
-                        
-                        BirthData birthData = createBirthData(birthTime, lat, lon, place);
-                        System.out.println("Generating birth chart for " + place + " (using Swiss Ephemeris)...");
-                        String chart = astrology.getBirthChartSummary(birthData);
-                        System.out.println(chart);
-                    } else {
-                        System.out.println("Usage: chart <birthDateTime> <latitude> <longitude> <place>");
-                    }
-                    break;
-                    
-                case "json":
-                    if (args.length >= 5) {
-                        LocalDateTime birthTime = LocalDateTime.parse(args[1]);
-                        double lat = Double.parseDouble(args[2]);
-                        double lon = Double.parseDouble(args[3]);
-                        String place = args[4];
-                        
-                        BirthData birthData = createBirthData(birthTime, lat, lon, place);
-                        System.out.println("Generating JSON chart for " + place + "...");
-                        String jsonChart = astrology.generateChartInFormat(birthData, ChartGenerator.ChartFormat.JSON);
-                        System.out.println(jsonChart);
-                    } else {
-                        System.out.println("Usage: json <birthDateTime> <latitude> <longitude> <place>");
-                    }
-                    break;
-                    
-                case "html":
-                    if (args.length >= 5) {
-                        LocalDateTime birthTime = LocalDateTime.parse(args[1]);
-                        double lat = Double.parseDouble(args[2]);
-                        double lon = Double.parseDouble(args[3]);
-                        String place = args[4];
-                        
-                        BirthData birthData = createBirthData(birthTime, lat, lon, place);
-                        System.out.println("Generating HTML chart for " + place + "...");
-                        String htmlChart = astrology.generateChartInFormat(birthData, ChartGenerator.ChartFormat.HTML);
-                        System.out.println(htmlChart);
-                    } else {
-                        System.out.println("Usage: html <birthDateTime> <latitude> <longitude> <place>");
-                    }
-                    break;
-                    
-                case "compatibility":
-                    System.out.println("Asthakoot compatibility calculation requires birth data for both individuals.");
-                    System.out.println("This feature will be available in the full implementation.");
-                    break;
-                    
-                default:
-                    System.out.println("Unknown command: " + command);
-                    System.out.println("Available commands: panchang, chart, json, html, compatibility");
-                    break;
-            }
-            
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            System.err.println("Please check your input parameters and try again.");
-            e.printStackTrace();
-        }
+    public java.util.List<com.example.purnima.model.DasaResult> calculateVimshottariDasa(BirthData birthData) {
+        return dasaCalculator.calculateMahadasas(birthData);
     }
+    
+    /**
+     * Get current Dasa period.
+     * 
+     * @param birthData Birth data
+     * @return Current Dasa period
+     */
+    public com.example.purnima.model.DasaResult getCurrentDasa(BirthData birthData) {
+        return dasaCalculator.getCurrentDasa(birthData);
+    }
+    
+    // ==================== MUHURTA METHODS ====================
+    
+    private final com.example.purnima.api.MuhurtaCalculator muhurtaCalculator = new com.example.purnima.service.DefaultMuhurtaCalculator();
+    
+    /**
+     * Calculate Muhurta details (Choghadiya, Hora, etc.).
+     * 
+     * @param date Date
+     * @param latitude Latitude
+     * @param longitude Longitude
+     * @param zoneId TimeZone
+     * @return MuhurtaResult
+     */
+    public com.example.purnima.model.MuhurtaResult calculateMuhurta(LocalDate date, double latitude, double longitude, ZoneId zoneId) {
+        return muhurtaCalculator.calculateMuhurta(date, latitude, longitude, zoneId);
+    }
+    
+
 } 
