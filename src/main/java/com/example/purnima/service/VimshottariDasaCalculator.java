@@ -65,53 +65,100 @@ public class VimshottariDasaCalculator implements DasaCalculator {
 
     @Override
     public List<DasaResult> calculateMahadasas(BirthData birthData) {
-        List<DasaResult> mahadasas = new ArrayList<>();
-        
-        // 1. Calculate Moon's Nakshatra
+        return calculateMahadasas(birthData, false);
+    }
+    
+    public List<DasaResult> calculateMahadasas(BirthData birthData, boolean includeSignificance) {
+        // 1. Calculate Moon's Nakshatra and position
+        // Using SwissEphCalculator directly for moon longitude and nakshatra info
         NakshatraInfo nakshatraInfo = SwissEphCalculator.calculateNakshatra(
             birthData.getBirthDateTime(), 
             birthData.getLatitude(), 
             birthData.getLongitude()
         );
         
-        // 2. Determine ruling planet and starting Dasa
-        int nakshatraIndex = nakshatraInfo.getNakshatraNumber() - 1;
-        int planetIndex = nakshatraIndex % 9;
+        // 2. Determine ruling planet and balance of Dasa
+        int nakshatraNumber = nakshatraInfo.getNakshatraNumber(); // 1 to 27
+        // Nakshatra index 0 to 26
+        int nakshatraIndex = nakshatraNumber - 1; 
+        
+        // Determine the lord of the nakshatra based on the standard Vimshottari sequence
+        // Nakshatra lords in order: Ketu, Venus, Sun, Moon, Mars, Rahu, Jupiter, Saturn, Mercury
+        // This sequence repeats every 9 nakshatras.
+        // So, nakshatra 1 (Aswini) is ruled by Ketu, 2 (Bharani) by Venus, 3 (Krittika) by Sun, etc.
+        // The DASA_PLANET_KEYS array is already in this order.
+        int planetIndexInDasaOrder = nakshatraIndex % 9; // This directly gives the index for DASA_PLANET_KEYS
         
         // 3. Calculate balance of Dasa
-        double degreeInNakshatra = nakshatraInfo.getDegreeInNakshatra();
-        double totalNakshatraDuration = 13.333333333;
+        double degreeInNakshatra = nakshatraInfo.getDegreeInNakshatra(); // Degrees traversed in current nakshatra
+        double totalNakshatraDuration = 13.333333333; // 13 degrees 20 minutes
+        
         double fractionElapsed = degreeInNakshatra / totalNakshatraDuration;
         double fractionRemaining = 1.0 - fractionElapsed;
         
         // Years remaining in current Mahadasa
-        double yearsRemaining = DASA_YEARS[planetIndex] * fractionRemaining;
+        double totalDasaYearsForPlanet = DASA_YEARS[planetIndexInDasaOrder];
+        double yearsRemaining = totalDasaYearsForPlanet * fractionRemaining;
         
         // 4. Generate Mahadasas
+        List<DasaResult> mahadasas = new ArrayList<>();
         LocalDateTime currentStartDate = birthData.getBirthDateTime();
         
         // First Mahadasa (partial)
         LocalDateTime firstEndDate = addYears(currentStartDate, yearsRemaining);
-        DasaResult firstDasa = new DasaResult(getLocalizedPlanetName(planetIndex), currentStartDate, firstEndDate, 1);
-        generateAntardasas(firstDasa, planetIndex, DASA_YEARS[planetIndex]);
+        DasaResult firstDasa = new DasaResult(getLocalizedPlanetName(planetIndexInDasaOrder), currentStartDate, firstEndDate, 1);
+        if (includeSignificance) {
+            firstDasa.setSignificance(getDasaSignificance(planetIndexInDasaOrder));
+        }
+        
+        // For the first Mahadasa, its theoretical start was `totalDasaYearsForPlanet` years before its end.
+        LocalDateTime theoreticalFirstDasaStart = addYears(firstEndDate, -totalDasaYearsForPlanet);
+        List<DasaResult> firstSubDasas = generateAntardasas(planetIndexInDasaOrder, theoreticalFirstDasaStart, firstEndDate, includeSignificance);
+        
+        // Filter sub-dasas to only show those active after birth
+        List<DasaResult> activeSubDasas = new ArrayList<>();
+        for (DasaResult sub : firstSubDasas) {
+            if (sub.getEndDate().isAfter(birthData.getBirthDateTime())) {
+                // Adjust start if it's before birth
+                if (sub.getStartDate().isBefore(birthData.getBirthDateTime())) {
+                    sub.setStartDate(birthData.getBirthDateTime());
+                }
+                activeSubDasas.add(sub);
+            }
+        }
+        firstDasa.setSubDasas(activeSubDasas);
         mahadasas.add(firstDasa);
         
         currentStartDate = firstEndDate;
         
         // Subsequent Mahadasas
-        int currentPlanetIndex = (planetIndex + 1) % 9;
-        LocalDateTime birthDate = birthData.getBirthDateTime();
+        int currentPlanetIndex = (planetIndexInDasaOrder + 1) % 9;
         
-        while (ChronoUnit.YEARS.between(birthDate, currentStartDate) < 120) {
+        // Generate subsequent Mahadasas until 120 years from birth or a reasonable future date
+        // The original code used `while (ChronoUnit.YEARS.between(birthDate, currentStartDate) < 120)`
+        // Let's ensure we generate at least a full 120-year cycle from birth.
+        LocalDateTime cycleEndDate = addYears(birthData.getBirthDateTime(), TOTAL_DASA_YEARS);
+
+        while (currentStartDate.isBefore(cycleEndDate) || mahadasas.size() < 9) { // Ensure at least 9 mahadasas for a full cycle
             int duration = DASA_YEARS[currentPlanetIndex];
             LocalDateTime endDate = addYears(currentStartDate, (double) duration);
             
+            // Cap the end date to the 120-year cycle end if it goes beyond
+            if (endDate.isAfter(cycleEndDate)) {
+                endDate = cycleEndDate;
+            }
+
             DasaResult dasa = new DasaResult(getLocalizedPlanetName(currentPlanetIndex), currentStartDate, endDate, 1);
-            generateAntardasas(dasa, currentPlanetIndex, duration);
+            if (includeSignificance) {
+                dasa.setSignificance(getDasaSignificance(currentPlanetIndex));
+            }
+            dasa.setSubDasas(generateAntardasas(currentPlanetIndex, currentStartDate, endDate, includeSignificance));
             mahadasas.add(dasa);
             
             currentStartDate = endDate;
             currentPlanetIndex = (currentPlanetIndex + 1) % 9;
+
+            if (currentStartDate.isEqual(cycleEndDate)) break; // Stop if we hit the 120-year mark
         }
         
         return mahadasas;
@@ -119,37 +166,46 @@ public class VimshottariDasaCalculator implements DasaCalculator {
 
     @Override
     public DasaResult getCurrentDasa(BirthData birthData) {
-        List<DasaResult> mahadasas = calculateMahadasas(birthData);
-        LocalDateTime now = LocalDateTime.now(); 
+        return getCurrentDasa(birthData, LocalDateTime.now(), false);
+    }
+    
+    public DasaResult getCurrentDasa(BirthData birthData, LocalDateTime targetDate, boolean includeSignificance) {
+        List<DasaResult> mahadasas = calculateMahadasas(birthData, includeSignificance);
         
         for (DasaResult md : mahadasas) {
-            if (isDateWithin(now, md.getStartDate(), md.getEndDate())) {
-                for (DasaResult ad : md.getSubPeriods()) {
-                    if (isDateWithin(now, ad.getStartDate(), ad.getEndDate())) {
-                        // Check if sub-periods exist (they should be generated by calculateMahadasas -> generateAntardasas)
-                        // But Pratyantardasas are NOT generated by default in calculateMahadasas to save space?
-                        // Wait, my previous implementation of generateAntardasas did NOT generate PDs.
-                        // So ad.getSubPeriods() is empty.
-                        
-                        // We need to find the planet indices to generate PDs.
-                        // Since DasaResult only has the localized name, we have a problem if we don't know the index.
-                        // BUT, we can iterate to find the index that matches the localized name?
-                        // Or better, since we are inside the loop, we can't easily know the index of 'md' and 'ad' without looking them up.
-                        
-                        // Let's implement a lookup helper.
-                        int mdPlanetIndex = getPlanetIndexFromLocalizedName(md.getPlanet());
-                        int adPlanetIndex = getPlanetIndexFromLocalizedName(ad.getPlanet());
-                        
-                        if (mdPlanetIndex != -1 && adPlanetIndex != -1) {
-                             generatePratyantardasas(ad, mdPlanetIndex, adPlanetIndex);
-                             
-                             for (DasaResult pd : ad.getSubPeriods()) {
-                                if (isDateWithin(now, pd.getStartDate(), pd.getEndDate())) {
-                                    return pd;
+            if (!targetDate.isBefore(md.getStartDate()) && !targetDate.isAfter(md.getEndDate())) {
+                // Found Mahadasa
+                // Now find Antardasa
+                if (md.getSubDasas() != null) {
+                    for (DasaResult ad : md.getSubDasas()) {
+                        if (!targetDate.isBefore(ad.getStartDate()) && !targetDate.isAfter(ad.getEndDate())) {
+                            // Found Antardasa
+                            
+                            // Let's generate PD for this AD
+                            int mdPlanetIndex = getPlanetIndexFromLocalizedName(md.getPlanet());
+                            int adPlanetIndex = getPlanetIndexFromLocalizedName(ad.getPlanet());
+                            
+                            List<DasaResult> pratyantardasas = generatePratyantardasas(mdPlanetIndex, adPlanetIndex, ad.getStartDate(), ad.getEndDate(), includeSignificance);
+                            ad.setSubDasas(pratyantardasas);
+                            
+                            // Find current PD
+                            for (DasaResult pd : pratyantardasas) {
+                                if (!targetDate.isBefore(pd.getStartDate()) && !targetDate.isAfter(pd.getEndDate())) {
+                                    // Found PD. Return MD -> AD -> PD hierarchy
+                                    DasaResult result = new DasaResult(md.getPlanet(), md.getStartDate(), md.getEndDate(), 1);
+                                    result.setSignificance(md.getSignificance());
+                                    
+                                    DasaResult subResult = new DasaResult(ad.getPlanet(), ad.getStartDate(), ad.getEndDate(), 2);
+                                    subResult.setSignificance(ad.getSignificance());
+                                    
+                                    subResult.setSubDasas(new ArrayList<>(List.of(pd)));
+                                    result.setSubDasas(new ArrayList<>(List.of(subResult)));
+                                    return result;
                                 }
                             }
+                            // If no PD found (shouldn't happen if logic is correct, but as fallback)
+                            return ad; 
                         }
-                        return ad;
                     }
                 }
                 return md;
@@ -159,18 +215,19 @@ public class VimshottariDasaCalculator implements DasaCalculator {
     }
     
     private int getPlanetIndexFromLocalizedName(String name) {
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < DASA_PLANET_KEYS.length; i++) {
             if (getLocalizedPlanetName(i).equals(name)) {
                 return i;
             }
         }
-        return -1;
+        return -1; // Should not happen if names are consistent
     }
     
     // Helper to add fractional years
     private LocalDateTime addYears(LocalDateTime date, double years) {
         long fullYears = (long) years;
         double fraction = years - fullYears;
+        // Using 365.2425 for average year length (Gregorian calendar)
         long extraDays = (long) (fraction * 365.2425);
         
         return date.plusYears(fullYears).plusDays(extraDays);
@@ -180,57 +237,89 @@ public class VimshottariDasaCalculator implements DasaCalculator {
         return (target.isEqual(start) || target.isAfter(start)) && target.isBefore(end);
     }
     
-    private void generateAntardasas(DasaResult mahadasa, int mahadasaPlanetIndex, int mahadasaYears) {
+    private List<DasaResult> generateAntardasas(int mahadasaLordIndex, LocalDateTime start, LocalDateTime end, boolean includeSignificance) {
+        List<DasaResult> antardasas = new ArrayList<>();
+        double totalMahadasaYears = DASA_YEARS[mahadasaLordIndex];
+        
+        LocalDateTime current = start;
+        
         // Antardasa sequence starts from the Mahadasa lord itself
-        int startPlanetIndex = mahadasaPlanetIndex;
-        
-        // Theoretical start of this Mahadasa = EndDate - MahadasaYears
-        LocalDateTime theoreticalStart = addYears(mahadasa.getEndDate(), -mahadasaYears);
-        LocalDateTime adStart = theoreticalStart;
-        
         for (int i = 0; i < 9; i++) {
-            int planetIdx = (startPlanetIndex + i) % 9;
-            int adYears = DASA_YEARS[planetIdx];
+            int subLordIndex = (mahadasaLordIndex + i) % 9;
+            double subYears = DASA_YEARS[subLordIndex];
             
-            double months = (double) mahadasaYears * adYears / 10.0;
-            double adDurationYears = months / 12.0;
+            // Formula: (Mahadasa Years * Antardasa Planet Years) / 120 = Antardasa Duration in Years
+            double durationYears = (totalMahadasaYears * subYears) / TOTAL_DASA_YEARS;
             
-            LocalDateTime adEnd = addYears(adStart, adDurationYears);
+            LocalDateTime subEnd = addYears(current, durationYears);
             
-            if (adEnd.isAfter(mahadasa.getStartDate())) {
-                LocalDateTime effectiveStart = adStart.isBefore(mahadasa.getStartDate()) ? mahadasa.getStartDate() : adStart;
-                DasaResult ad = new DasaResult(getLocalizedPlanetName(planetIdx), effectiveStart, adEnd, 2);
-                mahadasa.addSubPeriod(ad);
+            // Ensure the last antardasa ends exactly at the mahadasa end
+            if (i == 8) {
+                subEnd = end;
             }
             
-            adStart = adEnd;
+            DasaResult ad = new DasaResult(
+                getLocalizedPlanetName(subLordIndex),
+                current,
+                subEnd,
+                2
+            );
+            if (includeSignificance) {
+                ad.setSignificance(getDasaSignificance(subLordIndex));
+            }
+            antardasas.add(ad);
+            current = subEnd;
         }
+        return antardasas;
+    }
+    
+    private List<DasaResult> generatePratyantardasas(int mdLordIndex, int adLordIndex, LocalDateTime start, LocalDateTime end, boolean includeSignificance) {
+        List<DasaResult> pds = new ArrayList<>();
+        double mdYears = DASA_YEARS[mdLordIndex];
+        double adYears = DASA_YEARS[adLordIndex];
+        
+        LocalDateTime current = start;
+        
+        // Pratyantardasa sequence starts from the Antardasa lord itself
+        for (int i = 0; i < 9; i++) {
+            int pdLordIndex = (adLordIndex + i) % 9;
+            double pdYears = DASA_YEARS[pdLordIndex];
+            
+            // Formula: (MD Years * AD Years * PD Years) / (120 * 120) = Pratyantardasa Duration in Years
+            double pdDurationYears = (mdYears * adYears * pdYears) / (TOTAL_DASA_YEARS * TOTAL_DASA_YEARS);
+            
+            LocalDateTime subEnd = addYears(current, pdDurationYears);
+            
+            // Ensure the last pratyantardasa ends exactly at the antardasa end
+            if (i == 8) {
+                subEnd = end;
+            }
+            
+            DasaResult pd = new DasaResult(
+                getLocalizedPlanetName(pdLordIndex),
+                current,
+                subEnd,
+                3
+            );
+            if (includeSignificance) {
+                pd.setSignificance(getDasaSignificance(pdLordIndex));
+            }
+            pds.add(pd);
+            current = subEnd;
+        }
+        return pds;
+    }
+    
+    private String getDasaSignificance(int planetIndex) {
+        String key = "dasa.significance." + DASA_PLANET_KEYS[planetIndex].replace("planet.", "");
+        return getLocalizedMessage(key, "Significance not available");
     }
 
-    private void generatePratyantardasas(DasaResult antardasa, int mahadasaPlanetIndex, int antardasaPlanetIndex) {
-        int startPlanetIndex = antardasaPlanetIndex;
-        int mahadasaYears = DASA_YEARS[mahadasaPlanetIndex];
-        int antardasaYears = DASA_YEARS[antardasaPlanetIndex];
-        
-        double adDurationYears = (double) mahadasaYears * antardasaYears / 120.0;
-        LocalDateTime theoreticalStart = addYears(antardasa.getEndDate(), -adDurationYears);
-        LocalDateTime pdStart = theoreticalStart;
-        
-        for (int i = 0; i < 9; i++) {
-            int planetIdx = (startPlanetIndex + i) % 9;
-            int pdYears = DASA_YEARS[planetIdx];
-            
-            double pdDurationYears = adDurationYears * (pdYears / 120.0);
-            
-            LocalDateTime pdEnd = addYears(pdStart, pdDurationYears);
-            
-             if (pdEnd.isAfter(antardasa.getStartDate())) {
-                LocalDateTime effectiveStart = pdStart.isBefore(antardasa.getStartDate()) ? antardasa.getStartDate() : pdStart;
-                DasaResult pd = new DasaResult(getLocalizedPlanetName(planetIdx), effectiveStart, pdEnd, 3);
-                antardasa.addSubPeriod(pd);
-            }
-            
-            pdStart = pdEnd;
+    private String getLocalizedMessage(String key, String defaultMessage) {
+        if (messageSource == null) {
+            return defaultMessage;
         }
+        Locale locale = LocaleContextHolder.getLocale();
+        return messageSource.getMessage(key, null, defaultMessage, locale);
     }
 }

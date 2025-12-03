@@ -29,12 +29,17 @@ public class DasaController {
             @RequestParam double latitude,
             @RequestParam double longitude,
             @RequestParam(defaultValue = "Unknown") String placeName,
-            @RequestParam(required = false) String zoneId) {
+            @RequestParam(required = false) String zoneId,
+            @RequestParam(defaultValue = "false") boolean includeSignificance) {
         
         LocalDateTime dateTime = LocalDateTime.parse(birthTime);
         ZoneId zone = zoneId != null ? ZoneId.of(zoneId) : ZoneId.systemDefault();
         
         BirthData birthData = new BirthData(dateTime, latitude, longitude, placeName, zone);
+        
+        if (dasaCalculator instanceof VimshottariDasaCalculator) {
+            return ((VimshottariDasaCalculator) dasaCalculator).calculateMahadasas(birthData, includeSignificance);
+        }
         return dasaCalculator.calculateMahadasas(birthData);
     }
     
@@ -44,12 +49,17 @@ public class DasaController {
             @RequestParam double latitude,
             @RequestParam double longitude,
             @RequestParam(defaultValue = "Unknown") String placeName,
-            @RequestParam(required = false) String zoneId) {
+            @RequestParam(required = false) String zoneId,
+            @RequestParam(defaultValue = "false") boolean includeSignificance) {
         
         LocalDateTime dateTime = LocalDateTime.parse(birthTime);
         ZoneId zone = zoneId != null ? ZoneId.of(zoneId) : ZoneId.systemDefault();
         
         BirthData birthData = new BirthData(dateTime, latitude, longitude, placeName, zone);
+        
+        if (dasaCalculator instanceof VimshottariDasaCalculator) {
+            return ((VimshottariDasaCalculator) dasaCalculator).getCurrentDasa(birthData, LocalDateTime.now(), includeSignificance);
+        }
         return dasaCalculator.getCurrentDasa(birthData);
     }
 }
