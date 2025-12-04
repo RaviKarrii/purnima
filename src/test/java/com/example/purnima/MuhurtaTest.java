@@ -41,9 +41,16 @@ public class MuhurtaTest {
         assertNotNull(result.getInauspiciousTimes().getRahuKalam());
         System.out.println("Rahu Kalam: " + result.getInauspiciousTimes().getRahuKalam().getStartTime().toLocalTime() + " - " + result.getInauspiciousTimes().getRahuKalam().getEndTime().toLocalTime());
     }
+    private org.springframework.context.MessageSource createMessageSource() {
+        org.springframework.context.support.ReloadableResourceBundleMessageSource messageSource = new org.springframework.context.support.ReloadableResourceBundleMessageSource();
+        messageSource.setBasename("classpath:messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        return messageSource;
+    }
+
     @Test
     public void testVehicleMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(30); // Check for a month
         double lat = 17.3850; // Hyderabad
@@ -62,7 +69,7 @@ public class MuhurtaTest {
 
     @Test
     public void testMarriageMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(30);
         double lat = 17.3850;
@@ -80,7 +87,7 @@ public class MuhurtaTest {
     }
     @Test
     public void testGrihaPraveshMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(60); // Check for 2 months
         double lat = 17.3850;
@@ -99,7 +106,7 @@ public class MuhurtaTest {
 
     @Test
     public void testNewBusinessMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(30);
         double lat = 17.3850;
@@ -118,7 +125,7 @@ public class MuhurtaTest {
 
     @Test
     public void testNamakaranaMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(30);
         double lat = 17.3850;
@@ -137,7 +144,7 @@ public class MuhurtaTest {
 
     @Test
     public void testPropertyPurchaseMuhurta() {
-        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator();
+        DefaultMuhurtaCalculator calculator = new DefaultMuhurtaCalculator(createMessageSource());
         LocalDateTime start = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime end = start.plusDays(30);
         double lat = 17.3850;
