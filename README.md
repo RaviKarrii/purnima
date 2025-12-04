@@ -167,6 +167,19 @@ Calculate Tithi, Vara, Nakshatra, Yoga, Karana.
 **5. Get Muhurta**
 - **URL**: `GET /api/muhurta/calculate`
 - **Parameters**: `date`, `latitude`, `longitude`, `zoneId`
+- `GET /api/muhurta/vehicle`: Find auspicious slots for vehicle purchase.
+- `GET /api/muhurta/marriage`: Find auspicious slots for marriage.
+- `GET /api/muhurta/griha-pravesh`: Find auspicious slots for house warming.
+- `GET /api/muhurta/business`: Find auspicious slots for starting a new business.
+- `GET /api/muhurta/namakarana`: Find auspicious slots for naming ceremony.
+- `GET /api/muhurta/property`: Find auspicious slots for property purchase.
+
+**Parameters:**
+- `start`: Start date-time (ISO format, e.g., `2023-01-01T00:00:00`)
+- `end`: End date-time (ISO format)
+- `latitude`: Latitude of the location
+- `longitude`: Longitude of the location
+- `zoneId`: (Optional) Timezone ID (e.g., `Asia/Kolkata`)
 - **Example**: `GET /api/muhurta/calculate?date=2024-01-15&latitude=19.076&longitude=72.877`
 
 ### 4. Library Usage (Java)

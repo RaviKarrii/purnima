@@ -13,9 +13,12 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.DayOfWeek;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import com.example.purnima.model.MuhurtaSlot;
 
 /**
  * Default implementation of MuhurtaCalculator.
@@ -227,5 +230,285 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
             new MuhurtaResult.Period(yamaStart, yamaEnd),
             new MuhurtaResult.Period(gulikaStart, gulikaEnd)
         );
+    }
+    @Override
+    public List<MuhurtaSlot> findVehiclePurchaseMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Vehicle Purchase Criteria:
+        // Nakshatras: Ashwini(1), Rohini(4), Mrigashira(5), Punarvasu(7), Pushya(8), Hasta(13), Chitra(14), Swati(15), Anuradha(17), Shravana(22), Dhanishta(23), Shatabhisha(24), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(1, 4, 5, 7, 8, 13, 14, 15, 17, 22, 23, 24, 27);
+        // Tithis: 3, 5, 7, 10, 11, 13, 15 (Purnima)
+        List<Integer> goodTithis = Arrays.asList(3, 5, 7, 10, 11, 13, 15);
+        // Days: Mon(1), Wed(3), Thu(4), Fri(5)
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                // Check every 30 mins
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                // Check Rahu Kalam (approximate check using the calculated daily Rahu Kalam)
+                // We need to check if checkTime falls within the Rahu Kalam of that day
+                boolean isRahu = isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam());
+                
+                if (!isRahu) {
+                    SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                    SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
+                    
+                    if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                            Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber(), "Tithi: " + lunarPhase.getTithi()));
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+
+    @Override
+    public List<MuhurtaSlot> findMarriageMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Marriage Criteria:
+        // Nakshatras: Rohini(4), Mrigashira(5), Magha(10), Uttara Phalguni(12), Hasta(13), Swati(15), Anuradha(17), Moola(19), Uttara Ashadha(21), Uttara Bhadrapada(26), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(4, 5, 10, 12, 13, 15, 17, 19, 21, 26, 27);
+        // Tithis: 2, 3, 5, 7, 10, 11, 13
+        List<Integer> goodTithis = Arrays.asList(2, 3, 5, 7, 10, 11, 13);
+        // Days: Mon, Wed, Thu, Fri
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                // Check Combustion (Moodha) - Jupiter and Venus
+                // We check once per day ideally, but here per slot is fine
+                if (!isCombust(checkTime, latitude, longitude)) {
+                    MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                    boolean isRahu = isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam());
+                    
+                    if (!isRahu) {
+                        SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                        SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
+                        
+                        if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
+                             addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                                Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber(), "Tithi: " + lunarPhase.getTithi()));
+                        }
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+    
+    private boolean isTimeInPeriod(LocalDateTime time, MuhurtaResult.Period period) {
+        // Period dates might be just LocalDate, we need to compare times
+        // The Period object in MuhurtaResult has LocalDateTime start/end.
+        return !time.isBefore(period.getStartTime()) && !time.isAfter(period.getEndTime());
+    }
+    
+    private void addOrMergeSlot(List<MuhurtaSlot> slots, LocalDateTime start, LocalDateTime end, String quality, List<String> factors) {
+        if (!slots.isEmpty()) {
+            MuhurtaSlot last = slots.get(slots.size() - 1);
+            if (last.getEndTime().equals(start) && last.getQuality().equals(quality)) {
+                last.setEndTime(end);
+                return;
+            }
+        }
+        MuhurtaSlot slot = new MuhurtaSlot(start, end, quality);
+        slot.setPositiveFactors(new ArrayList<>(factors));
+        slots.add(slot);
+    }
+    
+    private boolean isCombust(LocalDateTime time, double lat, double lon) {
+        SwissEphCalculator.PlanetaryPosition sun = SwissEphCalculator.calculatePlanetPosition(time, lat, lon, "Sun");
+        SwissEphCalculator.PlanetaryPosition jupiter = SwissEphCalculator.calculatePlanetPosition(time, lat, lon, "Jupiter");
+        SwissEphCalculator.PlanetaryPosition venus = SwissEphCalculator.calculatePlanetPosition(time, lat, lon, "Venus");
+        
+        double sunLong = sun.getLongitude();
+        
+        // Check Jupiter (within 11 degrees)
+        double jupDiff = Math.abs(sunLong - jupiter.getLongitude());
+        if (jupDiff > 180) jupDiff = 360 - jupDiff;
+        if (jupDiff < 11) return true;
+        
+        // Check Venus (within 10 degrees)
+        double venDiff = Math.abs(sunLong - venus.getLongitude());
+        if (venDiff > 180) venDiff = 360 - venDiff;
+        if (venDiff < 10) return true;
+        
+        return false;
+    }
+    @Override
+    public List<MuhurtaSlot> findGrihaPraveshMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Griha Pravesh Criteria:
+        // Nakshatras: Rohini(4), Mrigashira(5), Uttara Phalguni(12), Chitra(14), Anuradha(17), Uttara Ashadha(21), Uttara Bhadrapada(26), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(4, 5, 12, 14, 17, 21, 26, 27);
+        // Tithis: 2, 3, 5, 7, 10, 11, 13
+        List<Integer> goodTithis = Arrays.asList(2, 3, 5, 7, 10, 11, 13);
+        // Days: Mon, Wed, Thu, Fri
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        // Fixed Lagna preferred: Taurus(2), Leo(5), Scorpio(8), Aquarius(11)
+        List<Integer> fixedLagnas = Arrays.asList(2, 5, 8, 11);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                // Check Solar Month (Sun Sign)
+                // Avoid Chaitra (Sun in Pisces/Aries transition), Pousha (Sun in Sagittarius/Capricorn) etc. depending on tradition.
+                // Simplified: Avoid Sun in Aries(1), Cancer(4), Libra(7), Capricorn(10) (Movable signs often avoided for stability, though some texts differ)
+                // Let's stick to the plan: Sun in Taurus, Gemini, Leo, Virgo, Scorpio, Sagittarius, Aquarius, Pisces.
+                // Avoid: Aries(1), Cancer(4), Libra(7), Capricorn(10).
+                int sunSign = getPlanetSign(checkTime, latitude, longitude, "Sun");
+                if (sunSign != 1 && sunSign != 4 && sunSign != 7 && sunSign != 10) {
+                    
+                    MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                    if (!isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam())) {
+                        SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                        SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
+                        
+                        if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
+                            // Check Lagna
+                            int lagna = getAscendantSign(checkTime, latitude, longitude);
+                            if (fixedLagnas.contains(lagna)) {
+                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.best", "Best"), 
+                                    Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber(), "Tithi: " + lunarPhase.getTithi(), "Lagna: " + lagna));
+                            } else {
+                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                                    Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber(), "Tithi: " + lunarPhase.getTithi(), "Lagna: " + lagna));
+                            }
+                        }
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+
+    @Override
+    public List<MuhurtaSlot> findNewBusinessMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Business Criteria:
+        // Nakshatras: Ashwini(1), Pushya(8), Hasta(13), Chitra(14), Anuradha(17), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(1, 8, 13, 14, 17, 27);
+        // Days: Wed, Thu, Fri
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                if (!isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam())) {
+                    SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                    
+                    if (goodNakshatras.contains(nakInfo.getNakshatraNumber())) {
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                            Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber()));
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+
+    @Override
+    public List<MuhurtaSlot> findNamakaranaMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Namakarana Criteria:
+        // Nakshatras: Ashwini(1), Rohini(4), Mrigashira(5), Punarvasu(7), Pushya(8), Hasta(13), Swati(15), Anuradha(17), Shravana(22), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(1, 4, 5, 7, 8, 13, 15, 17, 22, 27);
+        // Tithis: 1, 2, 3, 5, 7, 10, 11, 12, 13
+        List<Integer> goodTithis = Arrays.asList(1, 2, 3, 5, 7, 10, 11, 12, 13);
+        // Days: Mon, Wed, Thu, Fri
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                if (!isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam())) {
+                    SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                    SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
+                    
+                    if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                            Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber(), "Tithi: " + lunarPhase.getTithi()));
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+
+    @Override
+    public List<MuhurtaSlot> findPropertyPurchaseMuhurta(LocalDateTime start, LocalDateTime end, double latitude, double longitude, ZoneId zoneId) {
+        List<MuhurtaSlot> slots = new ArrayList<>();
+        LocalDateTime current = start;
+        
+        // Property Purchase Criteria:
+        // Nakshatras: Mrigashira(5), Punarvasu(7), Ashlesha(9), Magha(10), Purva Phalguni(11), Vishakha(16), Moola(19), Revati(27)
+        List<Integer> goodNakshatras = Arrays.asList(5, 7, 9, 10, 11, 16, 19, 27);
+        // Days: Thu, Fri
+        List<DayOfWeek> goodDays = Arrays.asList(DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+        
+        while (current.isBefore(end)) {
+            if (goodDays.contains(current.getDayOfWeek())) {
+                LocalDateTime slotStart = current;
+                LocalDateTime slotEnd = current.plusMinutes(30);
+                LocalDateTime checkTime = slotStart.plusMinutes(15);
+                
+                MuhurtaResult mr = calculateMuhurta(checkTime.toLocalDate(), latitude, longitude, zoneId);
+                if (!isTimeInPeriod(checkTime, mr.getInauspiciousTimes().getRahuKalam())) {
+                    SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
+                    
+                    if (goodNakshatras.contains(nakInfo.getNakshatraNumber())) {
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                            Arrays.asList("Nakshatra: " + nakInfo.getNakshatraNumber()));
+                    }
+                }
+            }
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+    
+    private int getPlanetSign(LocalDateTime time, double lat, double lon, String planet) {
+        SwissEphCalculator.PlanetaryPosition pos = SwissEphCalculator.calculatePlanetPosition(time, lat, lon, planet);
+        return (int) Math.floor(pos.getLongitude() / 30) + 1;
+    }
+    
+    private int getAscendantSign(LocalDateTime time, double lat, double lon) {
+        double asc = SwissEphCalculator.calculateAscendant(time, lat, lon);
+        return (int) Math.floor(asc / 30) + 1;
     }
 }
