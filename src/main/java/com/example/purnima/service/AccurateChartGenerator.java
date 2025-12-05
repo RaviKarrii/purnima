@@ -99,7 +99,7 @@ public class AccurateChartGenerator implements ChartGenerator {
     public String generateChartInFormat(ChartResult chartResult, ChartFormat format) {
         switch (format) {
             case TEXT:
-                return chartResult.getDetailedInfo();
+                return generateTextFormat(chartResult);
             case JSON:
                 return generateJsonFormat(chartResult);
             case XML:
@@ -109,8 +109,31 @@ public class AccurateChartGenerator implements ChartGenerator {
             case CSV:
                 return generateCsvFormat(chartResult);
             default:
-                return chartResult.getSummary();
+                return generateTextFormat(chartResult);
         }
+    }
+    
+    private String generateTextFormat(ChartResult chartResult) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Birth Chart Summary\n");
+        sb.append("===================\n\n");
+        sb.append("Name: ").append(chartResult.getBirthData().getPlaceName()).append("\n");
+        sb.append("Date & Time: ").append(chartResult.getBirthData().getBirthDateTime()).append("\n");
+        sb.append("Location: ").append(chartResult.getBirthData().getLatitude()).append(", ").append(chartResult.getBirthData().getLongitude()).append("\n\n");
+        
+        sb.append("ASCENDANT (LAGNA)\n");
+        sb.append("Rashi: ").append(chartResult.getAscendant().getRashi().getEnglishName()).append(" (").append(chartResult.getAscendant().getRashi().getSanskritName()).append(")\n");
+        sb.append("Degree: ").append(String.format("%.2f", chartResult.getAscendant().getStartDegree())).append("°\n\n");
+        
+        sb.append("PLANETARY POSITIONS\n");
+        sb.append("==================\n");
+        for (ChartResult.PlanetaryPosition position : chartResult.getPlanetaryPositions()) {
+            sb.append(position.getPlanet().getEnglishName()).append(": ");
+            sb.append(position.getRashi().getEnglishName()).append(" ");
+            sb.append(String.format("%.2f", position.getDegreeInRashi())).append("°\n");
+        }
+        
+        return sb.toString();
     }
     
     @Override

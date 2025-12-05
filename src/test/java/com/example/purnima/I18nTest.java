@@ -2,6 +2,7 @@ package com.example.purnima;
 
 import com.example.purnima.model.BirthData;
 import com.example.purnima.model.PanchangResult;
+import com.example.purnima.api.ChartGenerator;
 import com.example.purnima.service.AccurateChartGenerator;
 import com.example.purnima.service.DefaultPanchangCalculator;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ public class I18nTest {
             assertNotNull(panchang.getVara().getVaraName());
 
             // Test Chart
-            String chartSummary = chartGenerator.generateBirthChart(birthData).getSummary();
+            String chartSummary = chartGenerator.generateChartInFormat(chartGenerator.generateBirthChart(birthData), ChartGenerator.ChartFormat.TEXT);
             assertNotNull(chartSummary);
             
             System.out.println("\nChart Summary Snippet:");

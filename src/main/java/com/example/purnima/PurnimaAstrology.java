@@ -169,63 +169,7 @@ public class PurnimaAstrology {
         return panchangCalculator.calculatePanchang(dateTime, latitude, longitude, placeName, zoneId);
     }
     
-    /**
-     * Get Panchang summary for a specific date and location.
-     * 
-     * @param date Date for Panchang calculation
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @param placeName Name of the place
-     * @return Formatted Panchang summary
-     */
-    public String getPanchangSummary(LocalDate date, double latitude, double longitude, String placeName) {
-        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName);
-        return result.getSummary();
-    }
 
-    /**
-     * Get Panchang summary for a specific date and location with TimeZone.
-     * 
-     * @param date Date for Panchang calculation
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @param placeName Name of the place
-     * @param zoneId TimeZone of the location
-     * @return Formatted Panchang summary
-     */
-    public String getPanchangSummary(LocalDate date, double latitude, double longitude, String placeName, ZoneId zoneId) {
-        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName, zoneId);
-        return result.getSummary();
-    }
-    
-    /**
-     * Get detailed Panchang information for a specific date and location.
-     * 
-     * @param date Date for Panchang calculation
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @param placeName Name of the place
-     * @return Detailed Panchang information
-     */
-    public String getPanchangDetails(LocalDate date, double latitude, double longitude, String placeName) {
-        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName);
-        return result.getDetailedInfo();
-    }
-
-    /**
-     * Get detailed Panchang information for a specific date and location with TimeZone.
-     * 
-     * @param date Date for Panchang calculation
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @param placeName Name of the place
-     * @param zoneId TimeZone of the location
-     * @return Detailed Panchang information
-     */
-    public String getPanchangDetails(LocalDate date, double latitude, double longitude, String placeName, ZoneId zoneId) {
-        PanchangResult result = calculatePanchang(date, latitude, longitude, placeName, zoneId);
-        return result.getDetailedInfo();
-    }
     
     // ==================== CHART GENERATION METHODS ====================
     
@@ -250,27 +194,7 @@ public class PurnimaAstrology {
         return chartGenerator.generateCompatibilityChart(maleBirthData, femaleBirthData);
     }
     
-    /**
-     * Get birth chart summary.
-     * 
-     * @param birthData Birth data
-     * @return Formatted birth chart summary
-     */
-    public String getBirthChartSummary(BirthData birthData) {
-        ChartResult result = generateBirthChart(birthData);
-        return result.getSummary();
-    }
-    
-    /**
-     * Get detailed birth chart information.
-     * 
-     * @param birthData Birth data
-     * @return Detailed birth chart information
-     */
-    public String getBirthChartDetails(BirthData birthData) {
-        ChartResult result = generateBirthChart(birthData);
-        return result.getDetailedInfo();
-    }
+
     
     /**
      * Generate chart in specific format (JSON, XML, HTML, CSV).

@@ -75,74 +75,7 @@ public class PanchangResult {
         return muhurta;
     }
 
-    /**
-     * Get a formatted summary of the Panchang.
-     */
-    public String getSummary() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Panchang for ").append(dateTime.toLocalDate()).append(" at ").append(placeName).append("\n");
-        sb.append("==========================================\n\n");
-        sb.append("Tithi: ").append(tithi.getTithiName()).append(" (").append(tithi.getSanskritName()).append(")\n");
-        sb.append("Vara: ").append(vara.getVaraName()).append(" (").append(vara.getSanskritName()).append(")\n");
-        sb.append("Nakshatra: ").append(nakshatra.getNakshatraName()).append(" (").append(nakshatra.getSanskritName()).append(")\n");
-        sb.append("Yoga: ").append(yoga.getYogaName()).append(" (").append(yoga.getSanskritName()).append(")\n");
-        sb.append("Karana: ").append(karana.getKaranaName()).append(" (").append(karana.getSanskritName()).append(")");
-        return sb.toString();
-    }
 
-    /**
-     * Get detailed Panchang information.
-     */
-    public String getDetailedInfo() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Detailed Panchang Information\n");
-        sb.append("=============================\n\n");
-        sb.append("Date & Time: ").append(dateTime).append("\n");
-        sb.append("Location: ").append(placeName).append(" (").append(latitude).append(", ").append(longitude).append(")\n\n");
-        
-        sb.append("1. TITHI (Lunar Day)\n");
-        sb.append("   Name: ").append(tithi.getTithiName()).append(" (").append(tithi.getSanskritName()).append(")\n");
-        sb.append("   Number: ").append(tithi.getTithiNumber()).append("\n");
-        sb.append("   Paksha: ").append(tithi.isShuklaPaksha() ? "Shukla (Waxing)" : "Krishna (Waning)").append("\n");
-        sb.append("   Start: ").append(tithi.getStartTime()).append("\n");
-        sb.append("   End: ").append(tithi.getEndTime()).append("\n\n");
-        
-        sb.append("2. VARA (Weekday)\n");
-        sb.append("   Name: ").append(vara.getVaraName()).append(" (").append(vara.getSanskritName()).append(")\n");
-        sb.append("   Ruling Planet: ").append(vara.getRulingPlanet()).append("\n\n");
-        
-        sb.append("3. NAKSHATRA (Lunar Mansion)\n");
-        sb.append("   Name: ").append(nakshatra.getNakshatraName()).append(" (").append(nakshatra.getSanskritName()).append(")\n");
-        sb.append("   Number: ").append(nakshatra.getNakshatraNumber()).append("\n");
-        sb.append("   Ruling Planet: ").append(nakshatra.getRulingPlanet()).append("\n");
-        sb.append("   Start: ").append(nakshatra.getStartTime()).append("\n");
-        sb.append("   End: ").append(nakshatra.getEndTime()).append("\n\n");
-        
-        sb.append("4. YOGA (Solar-Lunar Combination)\n");
-        sb.append("   Name: ").append(yoga.getYogaName()).append(" (").append(yoga.getSanskritName()).append(")\n");
-        sb.append("   Number: ").append(yoga.getYogaNumber()).append("\n");
-        sb.append("   Start: ").append(yoga.getStartTime()).append("\n");
-        sb.append("   End: ").append(yoga.getEndTime()).append("\n\n");
-        
-        sb.append("5. KARANA (Half of Tithi)\n");
-        sb.append("   Name: ").append(karana.getKaranaName()).append(" (").append(karana.getSanskritName()).append(")\n");
-        sb.append("   Number: ").append(karana.getKaranaNumber()).append("\n");
-        sb.append("   Start: ").append(karana.getStartTime()).append("\n");
-        sb.append("   End: ").append(karana.getEndTime()).append("\n\n");
-        
-        if (muhurta != null) {
-            sb.append("AUSPICIOUS TIMINGS (MUHURTA)\n");
-            sb.append("============================\n");
-            sb.append("Brahma Muhurta: ").append(muhurta.getBrahmaMuhurta()).append("\n");
-            sb.append("Abhijit Muhurta: ").append(muhurta.getAbhijitMuhurta()).append("\n");
-            sb.append("Godhuli Muhurta: ").append(muhurta.getGodhuliMuhurta()).append("\n");
-            sb.append("Rahu Kaal: ").append(muhurta.getRahuKaal()).append("\n");
-            sb.append("Gulika Kaal: ").append(muhurta.getGulikaKaal()).append("\n");
-            sb.append("Yamaganda Kaal: ").append(muhurta.getYamagandaKaal()).append("\n");
-        }
-        
-        return sb.toString();
-    }
 
     @Override
     public boolean equals(Object o) {

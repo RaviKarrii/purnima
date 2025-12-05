@@ -71,78 +71,7 @@ public class ChartResult {
         return house.getPlanets();
     }
 
-    /**
-     * Get a formatted summary of the chart.
-     */
-    public String getSummary() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Birth Chart Summary\n");
-        sb.append("===================\n\n");
-        sb.append("Name: ").append(birthData.getPlaceName()).append("\n");
-        sb.append("Date & Time: ").append(birthData.getBirthDateTime()).append("\n");
-        sb.append("Location: ").append(birthData.getLatitude()).append(", ").append(birthData.getLongitude()).append("\n\n");
-        
-        sb.append("ASCENDANT (LAGNA)\n");
-        sb.append("Rashi: ").append(getAscendant().getRashi().getEnglishName()).append(" (").append(getAscendant().getRashi().getSanskritName()).append(")\n");
-        sb.append("Degree: ").append(String.format("%.2f", getAscendant().getStartDegree())).append("°\n\n");
-        
-        sb.append("PLANETARY POSITIONS\n");
-        sb.append("==================\n");
-        for (PlanetaryPosition position : planetaryPositions) {
-            sb.append(position.getPlanet().getEnglishName()).append(": ");
-            sb.append(position.getRashi().getEnglishName()).append(" ");
-            sb.append(String.format("%.2f", position.getDegreeInRashi())).append("°\n");
-        }
-        
-        return sb.toString();
-    }
 
-    /**
-     * Get detailed chart information.
-     */
-    public String getDetailedInfo() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Detailed Birth Chart\n");
-        sb.append("====================\n\n");
-        sb.append("BIRTH INFORMATION\n");
-        sb.append("Date & Time: ").append(birthData.getBirthDateTime()).append("\n");
-        sb.append("Location: ").append(birthData.getPlaceName()).append("\n");
-        sb.append("Coordinates: ").append(birthData.getLatitude()).append(", ").append(birthData.getLongitude()).append("\n\n");
-        
-        sb.append("HOUSES (BHAVAS)\n");
-        sb.append("===============\n");
-        for (int i = 0; i < houses.length; i++) {
-            House house = houses[i];
-            sb.append("House ").append(i + 1).append(": ");
-            sb.append(house.getRashi().getEnglishName()).append(" (").append(house.getRashi().getSanskritName()).append(")\n");
-            sb.append("  Start: ").append(String.format("%.2f", house.getStartDegree())).append("°\n");
-            sb.append("  End: ").append(String.format("%.2f", house.getEndDegree())).append("°\n");
-            
-            PlanetaryPosition[] planets = house.getPlanets();
-            if (planets.length > 0) {
-                sb.append("  Planets: ");
-                for (int j = 0; j < planets.length; j++) {
-                    if (j > 0) sb.append(", ");
-                    sb.append(planets[j].getPlanet().getEnglishName());
-                }
-                sb.append("\n");
-            }
-            sb.append("\n");
-        }
-        
-        sb.append("PLANETARY POSITIONS\n");
-        sb.append("==================\n");
-        for (PlanetaryPosition position : planetaryPositions) {
-            sb.append(position.getPlanet().getEnglishName()).append(" (").append(position.getPlanet().getSanskritName()).append(")\n");
-            sb.append("  Rashi: ").append(position.getRashi().getEnglishName()).append(" (").append(position.getRashi().getSanskritName()).append(")\n");
-            sb.append("  Degree: ").append(String.format("%.2f", position.getDegreeInRashi())).append("° in ").append(position.getRashi().getEnglishName()).append("\n");
-            sb.append("  House: ").append(position.getHouseNumber()).append("\n");
-            sb.append("  Retrograde: ").append(position.isRetrograde() ? "Yes" : "No").append("\n");
-            sb.append("  Exaltation: ").append(position.getExaltationStatus()).append("\n\n");
-        }
-        
-        return sb.toString();
-    }
 
     @Override
     public boolean equals(Object o) {
