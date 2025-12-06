@@ -7,6 +7,7 @@ import java.util.Map;
 import de.thmac.swisseph.SweDate;
 import de.thmac.swisseph.SwissEph;
 import de.thmac.swisseph.SweConst;
+import de.thmac.swisseph.DblObj;
 
 /**
  * Utility class for astronomical calculations.
@@ -453,5 +454,68 @@ public class SwissEphCalculator {
     public static double getAyanamsa(LocalDateTime dateTime) {
         double julianDay = dateTimeToJulianDay(dateTime);
         return sw.swe_get_ayanamsa_ut(julianDay);
+    }
+
+    /**
+     * Calculate rise or set time for a planet.
+     * 
+     * @param dateTime Date and time (for the day of calculation)
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param planetId SwissEph planet ID
+     * @param flag Rise/Set flag (SweConst.SE_CALC_RISE or SweConst.SE_CALC_SET)
+     * @return LocalDateTime of the rise or set, or null if it doesn't occur
+     */
+    public static LocalDateTime calculateRiseSet(LocalDateTime dateTime, double latitude, double longitude, int planetId, int flag) {
+        try {
+            SweDate sd = getSweDate(dateTime);
+            double julianDay = sd.getJulDay();
+            
+            // geopos: longitude, latitude, height
+            double[] geopos = new double[] {longitude, latitude, 0};
+            DblObj tres = new DblObj();
+            StringBuffer serr = new StringBuffer();
+            
+            // SEFLG_SWIEPH: use Swiss Ephemeris
+            // SE_BIT_DISC_CENTER: center of disc (standard for rise/set often uses center or limb, 
+            // but for simple astrological use, center is often sufficient or we can use SE_BIT_DISC_BOTTOM for apparent rise)
+            // However, standard Hindu sunrise is often defined as the appearance of the upper limb (or center depending on tradition).
+            // Let's use default (center) for now, or refine if needed. 
+            // Actually, for "Sunrise", it's usually upper limb. 
+            // SweConst.SE_BIT_DISC_CENTER is 0 (default).
+            // SweConst.SE_BIT_NO_REFRACTION can be used to ignore refraction.
+            
+            // We will use default flags for now which usually implies center of body and refraction included.
+            // For more precision matching standard almanacs, we might need specific flags.
+            int flags = SweConst.SEFLG_SWIEPH; 
+            
+            int ret = sw.swe_rise_trans(julianDay, planetId, null, flags, flag, geopos, 0, 0, tres, serr);
+            
+            if (ret < 0) {
+                // Error or event does not occur
+                return null;
+            }
+            
+            return julianDayToDateTime(tres.val, ZoneId.systemDefault());
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error calculating rise/set", e);
+        }
+    }
+
+    public static LocalDateTime calculateSunrise(LocalDateTime dateTime, double latitude, double longitude) {
+        return calculateRiseSet(dateTime, latitude, longitude, SweConst.SE_SUN, SweConst.SE_CALC_RISE);
+    }
+
+    public static LocalDateTime calculateSunset(LocalDateTime dateTime, double latitude, double longitude) {
+        return calculateRiseSet(dateTime, latitude, longitude, SweConst.SE_SUN, SweConst.SE_CALC_SET);
+    }
+
+    public static LocalDateTime calculateMoonrise(LocalDateTime dateTime, double latitude, double longitude) {
+        return calculateRiseSet(dateTime, latitude, longitude, SweConst.SE_MOON, SweConst.SE_CALC_RISE);
+    }
+
+    public static LocalDateTime calculateMoonset(LocalDateTime dateTime, double latitude, double longitude) {
+        return calculateRiseSet(dateTime, latitude, longitude, SweConst.SE_MOON, SweConst.SE_CALC_SET);
     }
 } 

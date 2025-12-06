@@ -121,7 +121,22 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
             "16:30 - 18:00", "14:30 - 16:00", "12:00 - 13:30"
         );
 
+        // 7. Rise/Set Times
+        LocalDateTime sunriseUt = SwissEphCalculator.calculateSunrise(dateTime, latitude, longitude);
+        LocalDateTime sunsetUt = SwissEphCalculator.calculateSunset(dateTime, latitude, longitude);
+        LocalDateTime moonriseUt = SwissEphCalculator.calculateMoonrise(dateTime, latitude, longitude);
+        LocalDateTime moonsetUt = SwissEphCalculator.calculateMoonset(dateTime, latitude, longitude);
+
+        java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+        java.time.ZoneId utcZone = java.time.ZoneId.of("UTC");
+        
+        String sunriseStr = (sunriseUt != null) ? sunriseUt.atZone(utcZone).withZoneSameInstant(zoneId).format(timeFormatter) : null;
+        String sunsetStr = (sunsetUt != null) ? sunsetUt.atZone(utcZone).withZoneSameInstant(zoneId).format(timeFormatter) : null;
+        String moonriseStr = (moonriseUt != null) ? moonriseUt.atZone(utcZone).withZoneSameInstant(zoneId).format(timeFormatter) : null;
+        String moonsetStr = (moonsetUt != null) ? moonsetUt.atZone(utcZone).withZoneSameInstant(zoneId).format(timeFormatter) : null;
+
         return new PanchangResult(dateTime, latitude, longitude, placeName,
+                                  sunriseStr, sunsetStr, moonriseStr, moonsetStr,
                                   tithiInfo, varaInfo, nakshatraInfo, yogaInfo, karanaInfo, muhurtaInfo);
     }
 

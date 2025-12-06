@@ -12,6 +12,10 @@ public class PanchangResult {
     private final double latitude;
     private final double longitude;
     private final String placeName;
+    private final String sunrise;
+    private final String sunset;
+    private final String moonrise;
+    private final String moonset;
     private final TithiInfo tithi;
     private final VaraInfo vara;
     private final NakshatraInfo nakshatra;
@@ -20,12 +24,17 @@ public class PanchangResult {
     private final MuhurtaInfo muhurta;
 
     public PanchangResult(LocalDateTime dateTime, double latitude, double longitude, String placeName,
+                         String sunrise, String sunset, String moonrise, String moonset,
                          TithiInfo tithi, VaraInfo vara, NakshatraInfo nakshatra, 
                          YogaInfo yoga, KaranaInfo karana, MuhurtaInfo muhurta) {
         this.dateTime = dateTime;
         this.latitude = latitude;
         this.longitude = longitude;
         this.placeName = placeName;
+        this.sunrise = sunrise;
+        this.sunset = sunset;
+        this.moonrise = moonrise;
+        this.moonset = moonset;
         this.tithi = tithi;
         this.vara = vara;
         this.nakshatra = nakshatra;
@@ -49,6 +58,22 @@ public class PanchangResult {
 
     public String getPlaceName() {
         return placeName;
+    }
+
+    public String getSunrise() {
+        return sunrise;
+    }
+
+    public String getSunset() {
+        return sunset;
+    }
+
+    public String getMoonrise() {
+        return moonrise;
+    }
+
+    public String getMoonset() {
+        return moonset;
     }
 
     public TithiInfo getTithi() {
@@ -86,6 +111,10 @@ public class PanchangResult {
                 Double.compare(that.longitude, longitude) == 0 &&
                 Objects.equals(dateTime, that.dateTime) &&
                 Objects.equals(placeName, that.placeName) &&
+                Objects.equals(sunrise, that.sunrise) &&
+                Objects.equals(sunset, that.sunset) &&
+                Objects.equals(moonrise, that.moonrise) &&
+                Objects.equals(moonset, that.moonset) &&
                 Objects.equals(tithi, that.tithi) &&
                 Objects.equals(vara, that.vara) &&
                 Objects.equals(nakshatra, that.nakshatra) &&
@@ -96,7 +125,7 @@ public class PanchangResult {
 
     @Override
     public int hashCode() {
-        return Objects.hash(dateTime, latitude, longitude, placeName, tithi, vara, nakshatra, yoga, karana, muhurta);
+        return Objects.hash(dateTime, latitude, longitude, placeName, sunrise, sunset, moonrise, moonset, tithi, vara, nakshatra, yoga, karana, muhurta);
     }
 
     @Override
@@ -104,6 +133,8 @@ public class PanchangResult {
         return "PanchangResult{" +
                 "dateTime=" + dateTime +
                 ", placeName='" + placeName + '\'' +
+                ", sunrise='" + sunrise + '\'' +
+                ", sunset='" + sunset + '\'' +
                 ", tithi=" + tithi.getTithiName() +
                 ", vara=" + vara.getVaraName() +
                 ", nakshatra=" + nakshatra.getNakshatraName() +

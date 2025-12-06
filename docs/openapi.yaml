@@ -248,12 +248,16 @@ components:
           $ref: '#/components/schemas/PanchangElement'
         sunrise:
           type: string
+          description: Sunrise time in HH:mm format
         sunset:
           type: string
+          description: Sunset time in HH:mm format
         moonrise:
           type: string
+          description: Moonrise time in HH:mm format
         moonset:
           type: string
+          description: Moonset time in HH:mm format
 
     PanchangElement:
       type: object
