@@ -515,15 +515,23 @@ components:
       type: object
       properties:
         tithi:
-          $ref: '#/components/schemas/PanchangElement'
+          type: array
+          items:
+            $ref: '#/components/schemas/TithiInfo'
         vara:
           type: string
         nakshatra:
-          $ref: '#/components/schemas/PanchangElement'
+          type: array
+          items:
+            $ref: '#/components/schemas/NakshatraInfo'
         yoga:
-          $ref: '#/components/schemas/PanchangElement'
+          type: array
+          items:
+            $ref: '#/components/schemas/YogaInfo'
         karana:
-          $ref: '#/components/schemas/PanchangElement'
+          type: array
+          items:
+            $ref: '#/components/schemas/KaranaInfo'
         sunrise:
           type: string
           description: Sunrise time in HH:mm format
@@ -537,16 +545,57 @@ components:
           type: string
           description: Moonset time in HH:mm format
 
-    PanchangElement:
+    TithiInfo:
       type: object
       properties:
-        name:
-          type: string
-        number:
+        tithiNumber:
           type: integer
+        tithiName:
+          type: string
+        startTime:
+          type: string
         endTime:
           type: string
-          description: End time in HH:mm format
+        isShuklaPaksha:
+          type: boolean
+
+    NakshatraInfo:
+      type: object
+      properties:
+        nakshatraNumber:
+          type: integer
+        nakshatraName:
+          type: string
+        rulingPlanet:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+
+    YogaInfo:
+      type: object
+      properties:
+        yogaNumber:
+          type: integer
+        yogaName:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+
+    KaranaInfo:
+      type: object
+      properties:
+        karanaNumber:
+          type: integer
+        karanaName:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
 
     ChartResult:
       type: object

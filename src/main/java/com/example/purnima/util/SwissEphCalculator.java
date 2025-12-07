@@ -30,13 +30,12 @@ public class SwissEphCalculator {
         PLANET_IDS.put("Ketu", -1); // Ketu is opposite to Rahu
     }
     
-    // Swiss Ephemeris instance
-    private static final SwissEph sw = new SwissEph();
-    
-    static {
-        // Set Sidereal mode to Lahiri (most common for Vedic Astrology)
-        sw.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI, 0, 0);
-    }
+    private static final ThreadLocal<SwissEph> sw = ThreadLocal.withInitial(() -> {
+        SwissEph swObj = new SwissEph();
+        swObj.swe_set_ephe_path("/Users/ravikarri/Documents/GitHub/purnima/ephe");
+        swObj.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI, 0, 0);
+        return swObj;
+    });
     
     /**
      * Calculate planetary position for a given date, time, and location.
@@ -64,21 +63,31 @@ public class SwissEphCalculator {
             
             double[] xx = new double[6];
             StringBuffer serr = new StringBuffer();
+            
+            // Note: Native Topocentric (SEFLG_TOPOCTR) requires ephemeris files.
+            // Since we might use Moshier fallback, we apply manual parallax correction.
+            
             int flags = SweConst.SEFLG_SIDEREAL | SweConst.SEFLG_SPEED;
             
             // Handle Ketu separately (opposite of Rahu)
             if (planetName.equals("Ketu")) {
                 planetId = SweConst.SE_MEAN_NODE;
-                int ret = sw.swe_calc_ut(julianDay, planetId, flags, xx, serr);
+                int ret = sw.get().swe_calc_ut(julianDay, planetId, flags, xx, serr);
                 if (ret < 0) {
                     throw new RuntimeException("SwissEph error: " + serr.toString());
                 }
                 // Ketu is 180 degrees from Rahu
                 xx[0] = (xx[0] + 180) % 360;
             } else {
-                int ret = sw.swe_calc_ut(julianDay, planetId, flags, xx, serr);
+            int ret = sw.get().swe_calc_ut(julianDay, planetId, flags, xx, serr);
                 if (ret < 0) {
                     throw new RuntimeException("SwissEph error: " + serr.toString());
+                }
+                
+                // Apply Topocentric Correction manually (Parallax)
+                // This is critical for Moon to match surface observations (like Drik Panchang)
+                if (planetName != null && !planetName.equals("Rahu") && !planetName.equals("Ketu")) {
+                    applyTopocentricCorrection(xx, julianDay, latitude, longitude);
                 }
             }
             
@@ -118,7 +127,7 @@ public class SwissEphCalculator {
             // 'P' for Placidus, though for Ascendant it doesn't matter much which system, 
             // but we need to pass a system. Vedic often uses Whole Sign or Equal House for charts,
             // but the Ascendant point is the same.
-            int ret = sw.swe_houses(julianDay, flags, latitude, longitude, 'P', cusps, ascmc);
+            int ret = sw.get().swe_houses(julianDay, flags, latitude, longitude, 'P', cusps, ascmc);
             
             if (ret < 0) {
                 throw new RuntimeException("SwissEph error calculating houses");
@@ -150,7 +159,7 @@ public class SwissEphCalculator {
             int flags = SweConst.SEFLG_SIDEREAL;
             
             // using Placidus ('P')
-            sw.swe_houses(julianDay, flags, latitude, longitude, 'P', cusps, ascmc);
+            sw.get().swe_houses(julianDay, flags, latitude, longitude, 'P', cusps, ascmc);
             
             double[] result = new double[12];
             // SwissEph returns cusps 1-12 in indices 1-12
@@ -453,7 +462,7 @@ public class SwissEphCalculator {
      */
     public static double getAyanamsa(LocalDateTime dateTime) {
         double julianDay = dateTimeToJulianDay(dateTime);
-        return sw.swe_get_ayanamsa_ut(julianDay);
+        return sw.get().swe_get_ayanamsa_ut(julianDay);
     }
 
     /**
@@ -489,7 +498,7 @@ public class SwissEphCalculator {
             // For more precision matching standard almanacs, we might need specific flags.
             int flags = SweConst.SEFLG_SWIEPH; 
             
-            int ret = sw.swe_rise_trans(julianDay, planetId, null, flags, flag, geopos, 0, 0, tres, serr);
+            int ret = sw.get().swe_rise_trans(julianDay, planetId, null, flags, flag, geopos, 0, 0, tres, serr);
             
             if (ret < 0) {
                 // Error or event does not occur
@@ -517,5 +526,145 @@ public class SwissEphCalculator {
 
     public static LocalDateTime calculateMoonset(LocalDateTime dateTime, double latitude, double longitude) {
         return calculateRiseSet(dateTime, latitude, longitude, SweConst.SE_MOON, SweConst.SE_CALC_SET);
+    }
+
+    private static void applyTopocentricCorrection(double[] xx, double julianDay, double latitude, double longitude) {
+        // 1. Get True Obliquity (Epsilon)
+        double[] epsi = new double[6];
+        sw.get().swe_calc_ut(julianDay, SweConst.SE_ECL_NUT, 0, epsi, new StringBuffer());
+        double epsilon = epsi[0]; // True obliquity
+        
+        // 2. Convert Ecliptic (Lon, Lat, Dist) to Equatorial (RA, Dec, Dist)
+        double lon = xx[0];
+        double lat = xx[1];
+        double dist = xx[2];
+        
+        double[] eq = eclipticToEquatorial(lon, lat, dist, epsilon);
+        double ra = eq[0];
+        double dec = eq[1];
+        // dist is same
+        
+        // 3. Calculate Local Sidereal Time (LST)
+        double gst = getGMST(julianDay);
+        double lst = (gst + longitude); // Degrees (GMST in degrees)
+        // Normalize LST
+        while (lst < 0) lst += 360;
+        while (lst >= 360) lst -= 360;
+        
+        // 4. Parallax Calculation (Vector subtraction)
+        double rEarth = 1.0 / 23454.7910; // Earth Radius in AU
+        double f = 1.0 / 298.257223563; // Flattening
+        double phi = Math.toRadians(latitude);
+        // Geocentric latitude of observer
+        double u = Math.atan((1 - f) * Math.tan(phi));
+        double sinU = Math.sin(u);
+        double cosU = Math.cos(u);
+        double lstRad = Math.toRadians(lst);
+        
+        // Observer Position in Equatorial Cartesian (in AU)
+        double xObs = rEarth * cosU * Math.cos(lstRad);
+        double yObs = rEarth * cosU * Math.sin(lstRad);
+        double zObs = rEarth * sinU; 
+        
+        // Object Position in Equatorial Cartesian
+        double raRad = Math.toRadians(ra);
+        double decRad = Math.toRadians(dec);
+        double xObj = dist * Math.cos(decRad) * Math.cos(raRad);
+        double yObj = dist * Math.cos(decRad) * Math.sin(raRad);
+        double zObj = dist * Math.sin(decRad);
+        
+        // Topocentric Position
+        double xTopo = xObj - xObs;
+        double yTopo = yObj - yObs;
+        double zTopo = zObj - zObs;
+        
+        // Convert back to Spherical Equatorial (RA', Dec', Dist')
+        double distTopo = Math.sqrt(xTopo*xTopo + yTopo*yTopo + zTopo*zTopo);
+        double zTopoRatio = zTopo / distTopo;
+        if (zTopoRatio > 1.0) zTopoRatio = 1.0;
+        if (zTopoRatio < -1.0) zTopoRatio = -1.0;
+        double decTopoRad = Math.asin(zTopoRatio);
+        double raTopoRad = Math.atan2(yTopo, xTopo);
+        
+        double raTopo = Math.toDegrees(raTopoRad);
+        double decTopo = Math.toDegrees(decTopoRad);
+        // Normalize RA
+        if (raTopo < 0) raTopo += 360;
+        
+        // 5. Convert Equatorial (Topo) back to Ecliptic (Topo)
+        double[] eclTopo = equatorialToEcliptic(raTopo, decTopo, distTopo, epsilon);
+        
+        // Update result
+        xx[0] = eclTopo[0]; // Longitude
+        xx[1] = eclTopo[1]; // Latitude
+        xx[2] = eclTopo[2]; // Distance
+    }
+    
+    // Helper: Convert Ecliptic to Equatorial
+    private static double[] eclipticToEquatorial(double lon, double lat, double dist, double epsilon) {
+        double lonRad = Math.toRadians(lon);
+        double latRad = Math.toRadians(lat);
+        double epsRad = Math.toRadians(epsilon);
+        
+        double x = Math.cos(latRad) * Math.cos(lonRad);
+        double y = Math.cos(latRad) * Math.sin(lonRad);
+        double z = Math.sin(latRad);
+        
+        // Rotate around X axis by -epsilon
+        // x' = x
+        // y' = y cos(eps) - z sin(eps)
+        // z' = y sin(eps) + z cos(eps)
+        
+        double xp = x;
+        double yp = y * Math.cos(epsRad) - z * Math.sin(epsRad);
+        double zp = y * Math.sin(epsRad) + z * Math.cos(epsRad);
+        
+        double raRad = Math.atan2(yp, xp);
+        double decRad = Math.asin(zp);
+        
+        double ra = Math.toDegrees(raRad);
+        double dec = Math.toDegrees(decRad);
+        if (ra < 0) ra += 360;
+        
+        return new double[] {ra, dec, dist};
+    }
+    
+    // Helper: Convert Equatorial to Ecliptic
+    private static double[] equatorialToEcliptic(double ra, double dec, double dist, double epsilon) {
+         double raRad = Math.toRadians(ra);
+         double decRad = Math.toRadians(dec);
+         double epsRad = Math.toRadians(epsilon);
+         
+         double x = Math.cos(decRad) * Math.cos(raRad);
+         double y = Math.cos(decRad) * Math.sin(raRad);
+         double z = Math.sin(decRad);
+         
+         // Rotate around X axis by +epsilon
+         // x' = x
+         // y' = y cos(eps) + z sin(eps)
+         // z' = -y sin(eps) + z cos(eps)
+         
+         double xp = x;
+         double yp = y * Math.cos(epsRad) + z * Math.sin(epsRad);
+         double zp = -y * Math.sin(epsRad) + z * Math.cos(epsRad);
+         
+         double lonRad = Math.atan2(yp, xp);
+         double latRad = Math.asin(zp);
+         
+         double lon = Math.toDegrees(lonRad);
+         double lat = Math.toDegrees(latRad);
+         if (lon < 0) lon += 360;
+         
+         return new double[] {lon, lat, dist};
+    }
+    
+    // Helper: Calculate GMST in degrees
+    private static double getGMST(double julianDay) {
+        double d = julianDay - 2451545.0;
+        double t = d / 36525.0;
+        double gmst = 280.46061837 + 360.98564736629 * d + 0.000387933 * t*t - t*t*t / 38710000.0;
+        while (gmst < 0) gmst += 360;
+        while (gmst >= 360) gmst -= 360;
+        return gmst;
     }
 } 

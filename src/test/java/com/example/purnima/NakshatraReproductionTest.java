@@ -24,7 +24,7 @@ public class NakshatraReproductionTest {
         double lon = 77.2090;
         String place = "New Delhi";
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
-
+        
         // Calculate Panchang
         PanchangResult result = calculator.calculatePanchang(date, lat, lon, place, zoneId);
 
