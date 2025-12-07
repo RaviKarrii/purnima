@@ -44,76 +44,142 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
     @Override
     public PanchangResult calculatePanchang(LocalDateTime dateTime, double latitude, double longitude, String placeName, java.time.ZoneId zoneId) {
         Locale locale = LocaleContextHolder.getLocale();
+        java.time.LocalDate localDate = dateTime.toLocalDate();
+        LocalDateTime dayStart = localDate.atStartOfDay();
+        LocalDateTime dayEnd = localDate.plusDays(1).atStartOfDay();
 
-        // 1. Tithi
-        SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(dateTime, latitude, longitude);
-        int tithiNumber = lunarPhase.getTithi();
-        String tithiName = messageSource.getMessage("tithi." + tithiNumber, null, "Tithi " + tithiNumber, locale);
-        
-        LocalDateTime tithiEndTime = findTithiEndTime(dateTime, latitude, longitude, tithiNumber);
-        double tithiEndDecimal = toDecimalTime(tithiEndTime, zoneId);
-        
-        PanchangResult.TithiInfo tithiInfo = new PanchangResult.TithiInfo(
-            tithiNumber, tithiName, tithiName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(tithiEndDecimal), 
-            lunarPhase.isShuklaPaksha()
-        );
+        // 1. Tithi List
+        java.util.List<PanchangResult.TithiInfo> tithiList = new java.util.ArrayList<>();
+        LocalDateTime current = dayStart;
+        while (current.isBefore(dayEnd)) {
+            // Convert to UTC for calculation
+            java.time.ZonedDateTime zdt = current.atZone(zoneId);
+            java.time.ZonedDateTime utZdt = zdt.withZoneSameInstant(java.time.ZoneId.of("UTC"));
+            LocalDateTime utcDateTime = utZdt.toLocalDateTime();
+
+            SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(utcDateTime, latitude, longitude);
+            int tithiNumber = lunarPhase.getTithi();
+            String tithiName = messageSource.getMessage("tithi." + tithiNumber, null, "Tithi " + tithiNumber, locale);
+            
+            LocalDateTime tithiEndTimeUtc = findTithiEndTime(utcDateTime, latitude, longitude, tithiNumber);
+            // Convert back to local for display/loop check
+            java.time.ZonedDateTime endZdt = tithiEndTimeUtc.atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+            LocalDateTime tithiEndTimeLocal = endZdt.toLocalDateTime();
+
+            double startDecimal = toDecimalTime(current); // current is already local
+            // Handle element spanning beyond dayEnd
+            String endTimeStr;
+            if (tithiEndTimeLocal.isAfter(dayEnd)) {
+                endTimeStr = "Next Day"; // Or some indicator
+            } else {
+                endTimeStr = com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(tithiEndTimeLocal));
+            }
+
+            tithiList.add(new PanchangResult.TithiInfo(
+                tithiNumber, tithiName, tithiName, 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(startDecimal), 
+                endTimeStr, 
+                lunarPhase.isShuklaPaksha()
+            ));
+            
+            current = tithiEndTimeLocal.plusSeconds(1); // Advance slightly to avoid edge case
+        }
 
         // 2. Vara (Day of Week)
         int dayOfWeek = dateTime.getDayOfWeek().getValue(); // 1=Mon, 7=Sun
         int vedicDay = (dayOfWeek == 7) ? 1 : dayOfWeek + 1;
-        
         String[] varaKeys = {"vara.sunday", "vara.monday", "vara.tuesday", "vara.wednesday", "vara.thursday", "vara.friday", "vara.saturday"};
         String varaName = messageSource.getMessage(varaKeys[vedicDay - 1], null, locale);
         String rulingPlanet = getVaraRulingPlanet(vedicDay);
-        
         PanchangResult.VaraInfo varaInfo = new PanchangResult.VaraInfo(vedicDay, varaName, varaName, rulingPlanet);
 
-        // 3. Nakshatra
-        SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(dateTime, latitude, longitude);
-        int nakshatraNumber = nakInfo.getNakshatraNumber();
-        String nakshatraName = messageSource.getMessage("nakshatra." + nakshatraNumber, null, "Nakshatra " + nakshatraNumber, locale);
-        String nakshatraRulingPlanet = getNakshatraRulingPlanet(nakshatraNumber);
-        
-        LocalDateTime nakshatraEndTime = findNakshatraEndTime(dateTime, latitude, longitude, nakshatraNumber);
-        double nakshatraEndDecimal = toDecimalTime(nakshatraEndTime, zoneId);
-        
-        PanchangResult.NakshatraInfo nakshatraInfo = new PanchangResult.NakshatraInfo(
-            nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(nakshatraEndDecimal)
-        );
+        // 3. Nakshatra List
+        java.util.List<PanchangResult.NakshatraInfo> nakList = new java.util.ArrayList<>();
+        current = dayStart;
+        while (current.isBefore(dayEnd)) {
+            java.time.ZonedDateTime zdt = current.atZone(zoneId);
+            java.time.ZonedDateTime utZdt = zdt.withZoneSameInstant(java.time.ZoneId.of("UTC"));
+            LocalDateTime utcDateTime = utZdt.toLocalDateTime();
 
-        // 4. Yoga
-        SwissEphCalculator.YogaInfo yogaInfoObj = SwissEphCalculator.calculateYoga(dateTime, latitude, longitude);
-        int yogaNumber = yogaInfoObj.getYogaNumber();
-        String yogaName = messageSource.getMessage("yoga." + yogaNumber, null, "Yoga " + yogaNumber, locale);
-        
-        LocalDateTime yogaEndTime = findYogaEndTime(dateTime, latitude, longitude, yogaNumber);
-        double yogaEndDecimal = toDecimalTime(yogaEndTime, zoneId);
-        
-        PanchangResult.YogaInfo yogaInfo = new PanchangResult.YogaInfo(
-            yogaNumber, yogaName, yogaName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(yogaEndDecimal)
-        );
+            SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(utcDateTime, latitude, longitude);
+            int nakshatraNumber = nakInfo.getNakshatraNumber();
+            String nakshatraName = messageSource.getMessage("nakshatra." + nakshatraNumber, null, "Nakshatra " + nakshatraNumber, locale);
+            String nakshatraRulingPlanet = getNakshatraRulingPlanet(nakshatraNumber);
+            
+            LocalDateTime nakEndTimeUtc = findNakshatraEndTime(utcDateTime, latitude, longitude, nakshatraNumber);
+            java.time.ZonedDateTime endZdt = nakEndTimeUtc.atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+            LocalDateTime nakEndTimeLocal = endZdt.toLocalDateTime();
 
-        // 5. Karana
-        SwissEphCalculator.KaranaInfo kInfo = SwissEphCalculator.calculateKarana(dateTime, latitude, longitude);
-        int karanaNumber = kInfo.getKaranaNumber();
-        
-        String karanaKey = getKaranaKey(karanaNumber);
-        String karanaName = messageSource.getMessage(karanaKey, null, "Karana " + karanaNumber, locale);
-        
-        LocalDateTime karanaEndTime = findKaranaEndTime(dateTime, latitude, longitude, karanaNumber);
-        double karanaEndDecimal = toDecimalTime(karanaEndTime, zoneId);
-        
-        PanchangResult.KaranaInfo karanaInfo = new PanchangResult.KaranaInfo(
-            karanaNumber, karanaName, karanaName, 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(dateTime, zoneId)), 
-            com.example.purnima.util.TimeUtil.formatDecimalTime(karanaEndDecimal)
-        );
+            double startDecimal = toDecimalTime(current);
+            String endTimeStr = nakEndTimeLocal.isAfter(dayEnd) ? "Next Day" : 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(nakEndTimeLocal));
+            
+            nakList.add(new PanchangResult.NakshatraInfo(
+                nakshatraNumber, nakshatraName, nakshatraName, nakshatraRulingPlanet, 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(startDecimal), 
+                endTimeStr
+            ));
+            current = nakEndTimeLocal.plusSeconds(1);
+        }
+
+        // 4. Yoga List
+        java.util.List<PanchangResult.YogaInfo> yogaList = new java.util.ArrayList<>();
+        current = dayStart;
+        while (current.isBefore(dayEnd)) {
+            java.time.ZonedDateTime zdt = current.atZone(zoneId);
+            java.time.ZonedDateTime utZdt = zdt.withZoneSameInstant(java.time.ZoneId.of("UTC"));
+            LocalDateTime utcDateTime = utZdt.toLocalDateTime();
+
+            SwissEphCalculator.YogaInfo yogaInfoObj = SwissEphCalculator.calculateYoga(utcDateTime, latitude, longitude);
+            int yogaNumber = yogaInfoObj.getYogaNumber();
+            String yogaName = messageSource.getMessage("yoga." + yogaNumber, null, "Yoga " + yogaNumber, locale);
+            
+            LocalDateTime yogaEndTimeUtc = findYogaEndTime(utcDateTime, latitude, longitude, yogaNumber);
+            java.time.ZonedDateTime endZdt = yogaEndTimeUtc.atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+            LocalDateTime yogaEndTimeLocal = endZdt.toLocalDateTime();
+
+            double startDecimal = toDecimalTime(current);
+            String endTimeStr = yogaEndTimeLocal.isAfter(dayEnd) ? "Next Day" : 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(yogaEndTimeLocal));
+            
+            yogaList.add(new PanchangResult.YogaInfo(
+                yogaNumber, yogaName, yogaName, 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(startDecimal), 
+                endTimeStr
+            ));
+            current = yogaEndTimeLocal.plusSeconds(1);
+        }
+
+        // 5. Karana List
+        java.util.List<PanchangResult.KaranaInfo> karanaList = new java.util.ArrayList<>();
+        current = dayStart;
+        while (current.isBefore(dayEnd)) {
+            java.time.ZonedDateTime zdt = current.atZone(zoneId);
+            java.time.ZonedDateTime utZdt = zdt.withZoneSameInstant(java.time.ZoneId.of("UTC"));
+            LocalDateTime utcDateTime = utZdt.toLocalDateTime();
+
+            SwissEphCalculator.KaranaInfo kInfo = SwissEphCalculator.calculateKarana(utcDateTime, latitude, longitude);
+            int karanaNumber = kInfo.getKaranaNumber();
+            
+            String karanaKey = getKaranaKey(karanaNumber);
+            String karanaName = messageSource.getMessage(karanaKey, null, "Karana " + karanaNumber, locale);
+            
+            LocalDateTime karanaEndTimeUtc = findKaranaEndTime(utcDateTime, latitude, longitude, karanaNumber);
+            java.time.ZonedDateTime endZdt = karanaEndTimeUtc.atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(zoneId);
+            LocalDateTime karanaEndTimeLocal = endZdt.toLocalDateTime();
+
+            double startDecimal = toDecimalTime(current);
+            String endTimeStr = karanaEndTimeLocal.isAfter(dayEnd) ? "Next Day" : 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(toDecimalTime(karanaEndTimeLocal));
+            
+            karanaList.add(new PanchangResult.KaranaInfo(
+                karanaNumber, karanaName, karanaName, 
+                com.example.purnima.util.TimeUtil.formatDecimalTime(startDecimal), 
+                endTimeStr
+            ));
+            current = karanaEndTimeLocal.plusSeconds(1);
+        }
+
 
         // 6. Muhurta (Simplified placeholder)
         PanchangResult.MuhurtaInfo muhurtaInfo = new PanchangResult.MuhurtaInfo(
@@ -122,10 +188,16 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
         );
 
         // 7. Rise/Set Times
-        LocalDateTime sunriseUt = SwissEphCalculator.calculateSunrise(dateTime, latitude, longitude);
-        LocalDateTime sunsetUt = SwissEphCalculator.calculateSunset(dateTime, latitude, longitude);
-        LocalDateTime moonriseUt = SwissEphCalculator.calculateMoonrise(dateTime, latitude, longitude);
-        LocalDateTime moonsetUt = SwissEphCalculator.calculateMoonset(dateTime, latitude, longitude);
+        // Use noon logic to get meaningful rise/set for the day
+        LocalDateTime noon = dayStart.plusHours(12);
+        java.time.ZonedDateTime zdtNoon = noon.atZone(zoneId);
+        java.time.ZonedDateTime utZdtNoon = zdtNoon.withZoneSameInstant(java.time.ZoneId.of("UTC"));
+        LocalDateTime utcNoon = utZdtNoon.toLocalDateTime();
+        
+        LocalDateTime sunriseUt = SwissEphCalculator.calculateSunrise(utcNoon, latitude, longitude);
+        LocalDateTime sunsetUt = SwissEphCalculator.calculateSunset(utcNoon, latitude, longitude);
+        LocalDateTime moonriseUt = SwissEphCalculator.calculateMoonrise(utcNoon, latitude, longitude);
+        LocalDateTime moonsetUt = SwissEphCalculator.calculateMoonset(utcNoon, latitude, longitude);
 
         java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
         java.time.ZoneId utcZone = java.time.ZoneId.of("UTC");
@@ -137,7 +209,7 @@ public class DefaultPanchangCalculator implements PanchangCalculator {
 
         return new PanchangResult(dateTime, latitude, longitude, placeName,
                                   sunriseStr, sunsetStr, moonriseStr, moonsetStr,
-                                  tithiInfo, varaInfo, nakshatraInfo, yogaInfo, karanaInfo, muhurtaInfo);
+                                  tithiList, varaInfo, nakList, yogaList, karanaList, muhurtaInfo);
     }
 
     @Override

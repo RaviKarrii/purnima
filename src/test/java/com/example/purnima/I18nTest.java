@@ -56,14 +56,14 @@ public class I18nTest {
             assertNotNull(panchang);
             
             System.out.println("Panchang Summary:");
-            System.out.println("Tithi: " + panchang.getTithi().getTithiName());
+            System.out.println("Tithi: " + panchang.getTithi().get(0).getTithiName());
             System.out.println("Vara: " + panchang.getVara().getVaraName());
-            System.out.println("Nakshatra: " + panchang.getNakshatra().getNakshatraName());
-            System.out.println("Yoga: " + panchang.getYoga().getYogaName());
-            System.out.println("Karana: " + panchang.getKarana().getKaranaName());
+            System.out.println("Nakshatra: " + panchang.getNakshatra().get(0).getNakshatraName());
+            System.out.println("Yoga: " + panchang.getYoga().get(0).getYogaName());
+            System.out.println("Karana: " + panchang.getKarana().get(0).getKaranaName());
 
             // Basic assertions to ensure we are getting some output
-            assertNotNull(panchang.getTithi().getTithiName());
+            assertNotNull(panchang.getTithi().get(0).getTithiName());
             assertNotNull(panchang.getVara().getVaraName());
 
             // Test Chart

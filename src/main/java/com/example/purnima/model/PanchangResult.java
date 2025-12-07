@@ -1,6 +1,7 @@
 package com.example.purnima.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -16,17 +17,17 @@ public class PanchangResult {
     private final String sunset;
     private final String moonrise;
     private final String moonset;
-    private final TithiInfo tithi;
+    private final List<TithiInfo> tithi;
     private final VaraInfo vara;
-    private final NakshatraInfo nakshatra;
-    private final YogaInfo yoga;
-    private final KaranaInfo karana;
+    private final List<NakshatraInfo> nakshatra;
+    private final List<YogaInfo> yoga;
+    private final List<KaranaInfo> karana;
     private final MuhurtaInfo muhurta;
 
     public PanchangResult(LocalDateTime dateTime, double latitude, double longitude, String placeName,
                          String sunrise, String sunset, String moonrise, String moonset,
-                         TithiInfo tithi, VaraInfo vara, NakshatraInfo nakshatra, 
-                         YogaInfo yoga, KaranaInfo karana, MuhurtaInfo muhurta) {
+                         List<TithiInfo> tithi, VaraInfo vara, List<NakshatraInfo> nakshatra, 
+                         List<YogaInfo> yoga, List<KaranaInfo> karana, MuhurtaInfo muhurta) {
         this.dateTime = dateTime;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -76,7 +77,7 @@ public class PanchangResult {
         return moonset;
     }
 
-    public TithiInfo getTithi() {
+    public List<TithiInfo> getTithi() {
         return tithi;
     }
 
@@ -84,15 +85,15 @@ public class PanchangResult {
         return vara;
     }
 
-    public NakshatraInfo getNakshatra() {
+    public List<NakshatraInfo> getNakshatra() {
         return nakshatra;
     }
 
-    public YogaInfo getYoga() {
+    public List<YogaInfo> getYoga() {
         return yoga;
     }
 
-    public KaranaInfo getKarana() {
+    public List<KaranaInfo> getKarana() {
         return karana;
     }
 
@@ -135,9 +136,9 @@ public class PanchangResult {
                 ", placeName='" + placeName + '\'' +
                 ", sunrise='" + sunrise + '\'' +
                 ", sunset='" + sunset + '\'' +
-                ", tithi=" + tithi.getTithiName() +
+                ", tithi=" + tithi +
                 ", vara=" + vara.getVaraName() +
-                ", nakshatra=" + nakshatra.getNakshatraName() +
+                ", nakshatra=" + nakshatra +
                 '}';
     }
 

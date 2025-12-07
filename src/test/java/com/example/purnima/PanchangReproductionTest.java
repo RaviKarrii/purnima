@@ -42,9 +42,17 @@ public class PanchangReproductionTest {
 
     private void printPanchang(DefaultPanchangCalculator calculator, LocalDate date, double lat, double lon, String place) {
         PanchangResult result = calculator.calculatePanchang(date, lat, lon, place, java.time.ZoneId.of("Asia/Kolkata"));
-        System.out.println("Tithi: " + result.getTithi().getTithiName() + " ends at " + result.getTithi().getEndTime());
-        System.out.println("Nakshatra: " + result.getNakshatra().getNakshatraName() + " ends at " + result.getNakshatra().getEndTime());
-        System.out.println("Yoga: " + result.getYoga().getYogaName() + " ends at " + result.getYoga().getEndTime());
-        System.out.println("Karana: " + result.getKarana().getKaranaName() + " ends at " + result.getKarana().getEndTime());
+        if (!result.getTithi().isEmpty()) {
+            System.out.println("Tithi: " + result.getTithi().get(0).getTithiName() + " ends at " + result.getTithi().get(0).getEndTime());
+        }
+        if (!result.getNakshatra().isEmpty()) {
+            System.out.println("Nakshatra: " + result.getNakshatra().get(0).getNakshatraName() + " ends at " + result.getNakshatra().get(0).getEndTime());
+        }
+        if (!result.getYoga().isEmpty()) {
+            System.out.println("Yoga: " + result.getYoga().get(0).getYogaName() + " ends at " + result.getYoga().get(0).getEndTime());
+        }
+        if (!result.getKarana().isEmpty()) {
+            System.out.println("Karana: " + result.getKarana().get(0).getKaranaName() + " ends at " + result.getKarana().get(0).getEndTime());
+        }
     }
 }
