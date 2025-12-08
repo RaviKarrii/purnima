@@ -10,6 +10,7 @@ public class MuhurtaSlot {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String quality; // e.g., "Best", "Good", "Average"
+    private String color;
     private List<String> positiveFactors; // e.g., "Auspicious Nakshatra", "Good Tithi"
     private List<String> negativeFactors; // e.g., "Rahu Kalam overlap" (if allowed with caution)
 
@@ -29,6 +30,9 @@ public class MuhurtaSlot {
 
     public String getQuality() { return quality; }
     public void setQuality(String quality) { this.quality = quality; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 
     public List<String> getPositiveFactors() { return positiveFactors; }
     public void setPositiveFactors(List<String> positiveFactors) { this.positiveFactors = positiveFactors; }

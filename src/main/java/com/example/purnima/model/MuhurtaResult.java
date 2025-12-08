@@ -52,18 +52,21 @@ public class MuhurtaResult {
         private LocalDateTime startTime;
         private LocalDateTime endTime;
         private String nature; // Good, Bad, Neutral
+        private String color;
 
-        public Choghadiya(String name, LocalDateTime startTime, LocalDateTime endTime, String nature) {
+        public Choghadiya(String name, LocalDateTime startTime, LocalDateTime endTime, String nature, String color) {
             this.name = name;
             this.startTime = startTime;
             this.endTime = endTime;
             this.nature = nature;
+            this.color = color;
         }
         
         public String getName() { return name; }
         public LocalDateTime getStartTime() { return startTime; }
         public LocalDateTime getEndTime() { return endTime; }
         public String getNature() { return nature; }
+        public String getColor() { return color; }
     }
     
     public static class Hora {

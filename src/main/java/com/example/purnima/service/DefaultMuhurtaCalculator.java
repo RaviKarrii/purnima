@@ -38,6 +38,15 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
     private static final String[] CHOGHADIYA_NATURE_KEYS = {
         "choghadiya.nature.bad", "choghadiya.nature.neutral", "choghadiya.nature.good", "choghadiya.nature.good", "choghadiya.nature.bad", "choghadiya.nature.good", "choghadiya.nature.bad"
     };
+
+    // Colors
+    private static final String COLOR_GOOD = "#90EE90"; // Light Green
+    private static final String COLOR_NEUTRAL = "#FFD580"; // Light Orange
+    private static final String COLOR_BAD = "#FFCCCB"; // Light Red
+    
+    private static final String[] CHOGHADIYA_COLORS = {
+        COLOR_BAD, COLOR_NEUTRAL, COLOR_GOOD, COLOR_GOOD, COLOR_BAD, COLOR_GOOD, COLOR_BAD
+    };
     
     // Starting index for each weekday (Sunday=0, Monday=1, ...)
     private static final int[] DAY_START_INDEX = {0, 3, 6, 2, 5, 1, 4};
@@ -164,12 +173,14 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
             
             String name = getLocalizedMessage(CHOGHADIYA_NAME_KEYS[index], "Unknown");
             String nature = getLocalizedMessage(CHOGHADIYA_NATURE_KEYS[index], "Unknown");
+            String color = CHOGHADIYA_COLORS[index];
             
             list.add(new MuhurtaResult.Choghadiya(
                 name,
                 current,
                 next,
-                nature
+                nature,
+                color
             ));
             current = next;
         }
@@ -340,6 +351,17 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
             }
         }
         MuhurtaSlot slot = new MuhurtaSlot(start, end, quality);
+        
+        // Determine color based on quality
+        // Assuming "Good" and "Best" are Green, "Average" is Orange
+        if (quality.contains("Best") || quality.contains("Good") || quality.equalsIgnoreCase("Good")) {
+             slot.setColor(COLOR_GOOD);
+        } else if (quality.contains("Average") || quality.contains("Nuetral")) {
+             slot.setColor(COLOR_NEUTRAL);
+        } else {
+             slot.setColor(COLOR_BAD); // Fallback
+        }
+        
         slot.setPositiveFactors(new ArrayList<>(factors));
         slots.add(slot);
     }
