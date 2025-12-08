@@ -279,7 +279,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                     SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
                     
                     if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
-                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                             Arrays.asList(
                                 getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber()), 
                                 getLocalizedMessage("panchang.tithi", "Tithi") + ": " + getTithiName(lunarPhase.getTithi())
@@ -322,7 +322,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                         SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
                         
                         if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
-                             addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                             addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                                 Arrays.asList(
                                     getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber()), 
                                     getLocalizedMessage("panchang.tithi", "Tithi") + ": " + getTithiName(lunarPhase.getTithi())
@@ -342,7 +342,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
         return !time.isBefore(period.getStartTime()) && !time.isAfter(period.getEndTime());
     }
     
-    private void addOrMergeSlot(List<MuhurtaSlot> slots, LocalDateTime start, LocalDateTime end, String quality, List<String> factors) {
+    private void addOrMergeSlot(List<MuhurtaSlot> slots, LocalDateTime start, LocalDateTime end, String quality, String color, List<String> factors) {
         if (!slots.isEmpty()) {
             MuhurtaSlot last = slots.get(slots.size() - 1);
             if (last.getEndTime().equals(start) && last.getQuality().equals(quality)) {
@@ -351,17 +351,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
             }
         }
         MuhurtaSlot slot = new MuhurtaSlot(start, end, quality);
-        
-        // Determine color based on quality
-        // Assuming "Good" and "Best" are Green, "Average" is Orange
-        if (quality.contains("Best") || quality.contains("Good") || quality.equalsIgnoreCase("Good")) {
-             slot.setColor(COLOR_GOOD);
-        } else if (quality.contains("Average") || quality.contains("Nuetral")) {
-             slot.setColor(COLOR_NEUTRAL);
-        } else {
-             slot.setColor(COLOR_BAD); // Fallback
-        }
-        
+        slot.setColor(color);
         slot.setPositiveFactors(new ArrayList<>(factors));
         slots.add(slot);
     }
@@ -423,14 +413,14 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                             // Check Lagna
                             int lagna = getAscendantSign(checkTime, latitude, longitude);
                             if (fixedLagnas.contains(lagna)) {
-                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.best", "Best"), 
+                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.best", "Best"), COLOR_GOOD,
                                     Arrays.asList(
                                         getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber()), 
                                         getLocalizedMessage("panchang.tithi", "Tithi") + ": " + getTithiName(lunarPhase.getTithi()), 
                                         getLocalizedMessage("chart.ascendant", "Lagna") + ": " + getRashiName(lagna)
                                     ));
                             } else {
-                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                                addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                                     Arrays.asList(
                                         getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber()), 
                                         getLocalizedMessage("panchang.tithi", "Tithi") + ": " + getTithiName(lunarPhase.getTithi()), 
@@ -468,7 +458,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                     SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
                     
                     if (goodNakshatras.contains(nakInfo.getNakshatraNumber())) {
-                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                             Arrays.asList(getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber())));
                     }
                 }
@@ -503,7 +493,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                     SwissEphCalculator.LunarPhase lunarPhase = SwissEphCalculator.calculateLunarPhase(checkTime, latitude, longitude);
                     
                     if (goodNakshatras.contains(nakInfo.getNakshatraNumber()) && goodTithis.contains(lunarPhase.getTithi())) {
-                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                             Arrays.asList(
                                 getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber()), 
                                 getLocalizedMessage("panchang.tithi", "Tithi") + ": " + getTithiName(lunarPhase.getTithi())
@@ -538,7 +528,7 @@ public class DefaultMuhurtaCalculator implements MuhurtaCalculator {
                     SwissEphCalculator.NakshatraInfo nakInfo = SwissEphCalculator.calculateNakshatra(checkTime, latitude, longitude);
                     
                     if (goodNakshatras.contains(nakInfo.getNakshatraNumber())) {
-                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), 
+                        addOrMergeSlot(slots, slotStart, slotEnd, getLocalizedMessage("muhurta.quality.good", "Good"), COLOR_GOOD,
                             Arrays.asList(getLocalizedMessage("panchang.nakshatra", "Nakshatra") + ": " + getNakshatraName(nakInfo.getNakshatraNumber())));
                     }
                 }
